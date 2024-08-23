@@ -1,23 +1,3 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.6"
-    }
-  }
-
-  required_version = ">= 1.9.0"
-}
-
-provider "aws" {
-  region = "ap-northeast-1"
-}
-
-variable "env_code" {
-  type    = string
-  default = "dev"
-}
-
 data "aws_caller_identity" "current" {
 }
 
@@ -29,6 +9,20 @@ resource "aws_s3_bucket" "artifact_bucket" {
 
 resource "aws_s3_bucket_public_access_block" "artifact_bucket_pab" {
   bucket = aws_s3_bucket.artifact_bucket.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+// S3 Bucket for Terraform states
+resource "aws_s3_bucket" "tfstate_bucket" {
+  bucket = "${var.env_code}-s3-tfstate-bucket-${data.aws_caller_identity.current.account_id}"
+}
+
+resource "aws_s3_bucket_public_access_block" "tfstate_bucket_pab" {
+  bucket = aws_s3_bucket.tfstate_bucket.id
 
   block_public_acls       = true
   block_public_policy     = true
@@ -78,7 +72,7 @@ resource "aws_codebuild_project" "serverless_app_build" {
   }
 
   cache {
-    type  = "NO_CACHE"
+    type = "NO_CACHE"
   }
 }
 
