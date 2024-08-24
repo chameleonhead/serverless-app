@@ -2,15 +2,36 @@ version: 0.2
 
 phases:
   install:
+    runtime-versions:
+      python: "3.11"
     commands:
-      - echo "Hello, World! (phase=install)"
+      - export PATH=$HOME/.local/bin:$PATH
+      - |
+        [ -z "$(which poetry)" ] && \
+        curl -sSL https://install.python-poetry.org | python3 - && \
+        poetry self add poetry-plugin-lambda-build
+      - |
+        [ -z "$(which terraform)" ] && \
+        curl -sSL https://releases.hashicorp.com/terraform/1.9.5/terraform_1.9.5_linux_amd64.zip -o /tmp/terraform.zip && \
+        unzip /tmp/terraform.zip -d $HOME/.local/bin
   pre_build:
     commands:
-      - echo "Hello, World! (phase=pre_build)"
+      - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry install
+      - |
+        cd ${CODEBUILD_SRC_DIR}/terraform && \
+        terraform init \
+          -backend-config="bucket=${S3_BUCKET_TFSTATE}" \
+          -backend-config="key=${S3_KEY_TFSTATE}" \
+          -backend-config="region=${AWS_REGION}" && \
+        cd ..
   build:
     commands:
-      - echo "Hello, World! (phase=build)"
-      - ls -al
+      - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run python -m unittest && poetry build-lambda
   post_build:
     commands:
-      - echo "Hello, World! (phase=post_build)"
+      - cd ${CODEBUILD_SRC_DIR}/terraform && terraform apply -auto-approve
+cache:
+  paths:
+    - /root/.local
+    - /root/.cache
+    - terraform/.terraform
