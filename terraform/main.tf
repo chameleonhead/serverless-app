@@ -13,3 +13,9 @@ module "api" {
   issuer       = module.idp.issuer
   user_pool_id = module.idp.user_pool_id
 }
+
+module "frontend" {
+  source = "./modules/frontend"
+
+  env_code = var.env_code
+}

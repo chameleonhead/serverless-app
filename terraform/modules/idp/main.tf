@@ -7,5 +7,5 @@ resource "aws_cognito_user_pool" "userpool" {
 
 resource "aws_cognito_user_pool_domain" "userpool_domain" {
   user_pool_id = aws_cognito_user_pool.userpool.id
-  domain       = "severless-app"
+  domain       = "${var.env_code}-severless-app"
 }
