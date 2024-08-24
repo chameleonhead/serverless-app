@@ -31,5 +31,4 @@ phases:
 cache:
   paths:
     - /root/.local/**/*
-    - /root/.cache/**/*
     - terraform/.terraform/**/*
