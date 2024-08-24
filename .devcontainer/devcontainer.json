@@ -14,7 +14,8 @@
 				"ms-python.black-formatter",
 				"amazonwebservices.aws-toolkit-vscode",
 				"donjayamanne.git-extension-pack",
-				"hashicorp.terraform"
+				"hashicorp.terraform",
+				"esbenp.prettier-vscode"
 			]
 		}
 	},
