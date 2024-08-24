@@ -61,6 +61,16 @@ resource "aws_codebuild_project" "serverless_app_build" {
     type                        = "LINUX_CONTAINER"
     image_pull_credentials_type = "CODEBUILD"
     privileged_mode             = "true"
+
+    environment_variable {
+      name  = "S3_BUCKET_TFSTATE"
+      value = aws_s3_bucket.tfstate_bucket.bucket
+    }
+
+    environment_variable {
+      name  = "S3_KEY_TFSTATE"
+      value = "serverless-app/terraform.tfstate"
+    }
   }
 
   source {
