@@ -29,7 +29,7 @@ data "aws_iam_policy_document" "frontend_assets_policy" {
     condition {
       test     = "StringEquals"
       variable = "AWS:SourceArn"
-      values   = ["arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.s3_distribution.id}"]
+      values   = ["arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.distribution.id}"]
     }
   }
 }
@@ -102,7 +102,7 @@ locals {
 }
 
 resource "aws_s3_object" "dist" {
-  for_each = toset([for s in fileset("../frontend/dist", "**/*") : s if s != "index.html"])
+  for_each = toset([for s in fileset("../frontend/dist", "**") : s if s != "index.html"])
 
   bucket       = aws_s3_bucket.frontend_assets.bucket
   key          = each.value
