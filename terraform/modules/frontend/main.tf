@@ -40,13 +40,13 @@ resource "aws_s3_bucket_policy" "frontend_assets_policy" {
 }
 
 resource "aws_cloudfront_origin_access_control" "default" {
-  name                              = "default"
+  name                              = "${var.env_code}-serverless-app"
   origin_access_control_origin_type = "s3"
   signing_behavior                  = "always"
   signing_protocol                  = "sigv4"
 }
 
-resource "aws_cloudfront_distribution" "s3_distribution" {
+resource "aws_cloudfront_distribution" "distribution" {
   origin {
     origin_id                = "s3origin"
     domain_name              = aws_s3_bucket.frontend_assets.bucket_regional_domain_name
