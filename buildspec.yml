@@ -4,7 +4,7 @@ phases:
   install:
     runtime-versions:
       python: "3.11"
-      nodejs: "20.x"
+      nodejs: "20"
     commands:
       - export PATH=$HOME/.local/bin:$PATH
       - |
@@ -34,8 +34,7 @@ phases:
 
 artifacts:
   files:
-    - /frontend/dist/**/*
-    - /api/hello/dist/**/*
+    - '**/*'
 
 cache:
   paths:
