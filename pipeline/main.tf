@@ -16,6 +16,21 @@ resource "aws_s3_bucket_public_access_block" "artifact_bucket_pab" {
   restrict_public_buckets = true
 }
 
+
+// S3 Bucket for cache
+resource "aws_s3_bucket" "cache_bucket" {
+  bucket = "${var.env_code}-s3-cache-bucket-${data.aws_caller_identity.current.account_id}"
+}
+
+resource "aws_s3_bucket_public_access_block" "cache_bucket_pab" {
+  bucket = aws_s3_bucket.cache_bucket.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
 // S3 Bucket for Terraform states
 resource "aws_s3_bucket" "tfstate_bucket" {
   bucket = "${var.env_code}-s3-tfstate-bucket-${data.aws_caller_identity.current.account_id}"
@@ -51,8 +66,8 @@ resource "aws_iam_role" "codebuild_role" {
 }
 
 resource "aws_codebuild_project" "serverless_app_build" {
-  name          = "${var.env_code}-serverless-app-build"
-  service_role  = aws_iam_role.codebuild_role.arn
+  name         = "${var.env_code}-serverless-app-build"
+  service_role = aws_iam_role.codebuild_role.arn
 
   environment {
     compute_type                = "BUILD_GENERAL1_SMALL"
@@ -81,7 +96,8 @@ resource "aws_codebuild_project" "serverless_app_build" {
   }
 
   cache {
-    type = "NO_CACHE"
+    type     = "S3"
+    location = "${aws_s3_bucket.cache_bucket.bucket}/serverless-app"
   }
 }
 
