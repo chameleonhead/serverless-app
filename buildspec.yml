@@ -7,11 +7,11 @@ phases:
     commands:
       - export PATH=$HOME/.local/bin:$PATH
       - |
-        [ -z "$(which poetry)" ] && \
+        [ -n "$(which poetry)" ] || \
         curl -sSL https://install.python-poetry.org | python3 - && \
         poetry self add poetry-plugin-lambda-build
       - |
-        [ -z "$(which terraform)" ] && \
+        [ -n "$(which terraform)" ] || \
         curl -sSL https://releases.hashicorp.com/terraform/1.9.5/terraform_1.9.5_linux_amd64.zip -o /tmp/terraform.zip && \
         unzip /tmp/terraform.zip -d $HOME/.local/bin
   pre_build:
