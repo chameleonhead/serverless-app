@@ -18,19 +18,18 @@ phases:
       - cd ${CODEBUILD_SRC_DIR}/frontend && npm install --no-progress
       - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry install
       - |
-        cd ${CODEBUILD_SRC_DIR}/terraform && \
+        cd ${CODEBUILD_SRC_DIR}/terraform && echo -e "terraform {\n  backend \"s3\" {}\n}" > _override.tf && \
         terraform init \
           -backend-config="bucket=${S3_BUCKET_TFSTATE}" \
           -backend-config="key=${S3_KEY_TFSTATE}" \
-          -backend-config="region=${AWS_REGION}" && \
-        cd ..
+          -backend-config="region=${AWS_REGION}"
   build:
     commands:
       - cd ${CODEBUILD_SRC_DIR}/frontend && npm run build
       - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run python -m unittest && poetry build-lambda
   post_build:
     commands:
-      - cd ${CODEBUILD_SRC_DIR}/terraform && terraform apply -auto-approve
+      - cd ${CODEBUILD_SRC_DIR}/terraform && terraform apply -input=false -auto-approve
 
 artifacts:
   files:
