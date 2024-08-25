@@ -1,6 +1,7 @@
 import { Form, useLoaderData, redirect, useNavigate } from 'react-router-dom';
 import { updateContact } from '../contacts';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, react-refresh/only-export-components
 export async function action({ request, params }: any) {
   const formData = await request.formData();
   const updates = Object.fromEntries(formData);
@@ -9,6 +10,7 @@ export async function action({ request, params }: any) {
 }
 
 export default function EditContact() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { contact } = useLoaderData() as any;
   const navigate = useNavigate();
 

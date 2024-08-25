@@ -1,6 +1,7 @@
 import { Form, useLoaderData, useFetcher } from 'react-router-dom';
 import { Contact as ContactType, getContact, updateContact } from '../contacts';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, react-refresh/only-export-components
 export async function loader({ params }: any) {
   const contact = await getContact(params.contactId);
   if (!contact) {
@@ -12,6 +13,7 @@ export async function loader({ params }: any) {
   return { contact };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, react-refresh/only-export-components
 export async function action({ request, params }: any) {
   const formData = await request.formData();
   return updateContact(params.contactId, {
@@ -20,6 +22,7 @@ export async function action({ request, params }: any) {
 }
 
 export default function Contact() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { contact } = useLoaderData() as any;
 
   return (

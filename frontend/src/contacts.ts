@@ -24,9 +24,9 @@ export async function getContacts(query: string | null = null) {
 
 export async function createContact() {
   await fakeNetwork();
-  let id = Math.random().toString(36).substring(2, 9);
-  let contact = { id, createdAt: Date.now() };
-  let contacts = await getContacts();
+  const id = Math.random().toString(36).substring(2, 9);
+  const contact = { id, createdAt: Date.now() };
+  const contacts = await getContacts();
   contacts.unshift(contact);
   await set(contacts);
   return contact;
@@ -34,15 +34,15 @@ export async function createContact() {
 
 export async function getContact(id: string) {
   await fakeNetwork(`contact:${id}`);
-  let contacts = await localforage.getItem<Contact[]>('contacts');
-  let contact = contacts?.find((contact) => contact.id === id);
+  const contacts = await localforage.getItem<Contact[]>('contacts');
+  const contact = contacts?.find((contact) => contact.id === id);
   return contact ?? null;
 }
 
 export async function updateContact(id: string, updates: Partial<Contact>) {
   await fakeNetwork();
-  let contacts = await localforage.getItem<Contact[]>('contacts');
-  let contact = contacts?.find((contact) => contact.id === id);
+  const contacts = await localforage.getItem<Contact[]>('contacts');
+  const contact = contacts?.find((contact) => contact.id === id);
   if (!contact) throw new Error('No contact found for ' + id);
   Object.assign(contact, updates);
   await set(contacts);
@@ -50,9 +50,9 @@ export async function updateContact(id: string, updates: Partial<Contact>) {
 }
 
 export async function deleteContact(id: string) {
-  let contacts = await localforage.getItem<Contact[]>('contacts');
+  const contacts = await localforage.getItem<Contact[]>('contacts');
   if (!contacts) return false;
-  let index = contacts.findIndex((contact) => contact.id === id);
+  const index = contacts.findIndex((contact) => contact.id === id);
   if (index > -1) {
     contacts.splice(index, 1);
     await set(contacts);
