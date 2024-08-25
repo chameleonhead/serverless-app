@@ -1,8 +1,8 @@
 import { Form, useLoaderData, useFetcher } from 'react-router-dom';
 import { Contact as ContactType, getContact, updateContact } from '../contacts';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, react-refresh/only-export-components
-export async function loader({ params }: any) {
+// eslint-disable-next-line react-refresh/only-export-components
+export async function loader({ params }: { params: { contactId: string } }) {
   const contact = await getContact(params.contactId);
   if (!contact) {
     throw new Response('', {
@@ -13,8 +13,8 @@ export async function loader({ params }: any) {
   return { contact };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, react-refresh/only-export-components
-export async function action({ request, params }: any) {
+// eslint-disable-next-line react-refresh/only-export-components
+export async function action({ request, params }: { request: Request, params: { contactId: string } }) {
   const formData = await request.formData();
   return updateContact(params.contactId, {
     favorite: formData.get('favorite') === 'true',
@@ -22,8 +22,7 @@ export async function action({ request, params }: any) {
 }
 
 export default function Contact() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { contact } = useLoaderData() as any;
+  const { contact } = useLoaderData() as { contact: ContactType };
 
   return (
     <div id="contact">

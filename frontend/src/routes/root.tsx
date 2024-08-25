@@ -15,8 +15,8 @@ export async function action() {
   return { contact };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, react-refresh/only-export-components
-export async function loader({ request }: any) {
+// eslint-disable-next-line react-refresh/only-export-components
+export async function loader({ request }: { request: Request }) {
   const url = new URL(request.url);
   const q = url.searchParams.get('q') as string | null;
   const contacts = await getContacts(q);
@@ -24,8 +24,7 @@ export async function loader({ request }: any) {
 }
 
 export default function Root() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { contacts, q } = useLoaderData() as any;
+  const { contacts, q } = useLoaderData() as { contacts: Contact[], q: string };
   const navigation = useNavigation();
   const submit = useSubmit();
 
