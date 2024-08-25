@@ -40,7 +40,8 @@ phases:
   post_build:
     on-failure: ABORT
     commands:
-      - cd ${CODEBUILD_SRC_DIR}/terraform && terraform apply -input=false -auto-approve
+      - |
+        [ ${CODEBUILD_BUILD_SUCCEEDING} -eq 1 ] && cd ${CODEBUILD_SRC_DIR}/terraform && terraform apply -input=false -auto-approve
 
 artifacts:
   files:
