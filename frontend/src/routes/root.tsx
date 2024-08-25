@@ -24,7 +24,7 @@ export async function loader({ request }: { request: Request }) {
 }
 
 export default function Root() {
-  const { contacts, q } = useLoaderData() as { contacts: Contact[], q: string };
+  const { contacts, q } = useLoaderData() as { contacts: Contact[]; q: string };
   const navigation = useNavigation();
   const submit = useSubmit();
 

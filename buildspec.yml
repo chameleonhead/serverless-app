@@ -2,6 +2,7 @@ version: 0.2
 
 phases:
   install:
+    on-failure: ABORT
     runtime-versions:
       python: "3.11"
       nodejs: "20"
@@ -14,6 +15,7 @@ phases:
         [ -n "$(which terraform)" ] || \
         (curl -sSL https://releases.hashicorp.com/terraform/1.9.5/terraform_1.9.5_linux_amd64.zip -o /tmp/terraform.zip && unzip /tmp/terraform.zip -d $HOME/.local/bin)
   pre_build:
+    on-failure: ABORT
     commands:
       - cd ${CODEBUILD_SRC_DIR}/frontend && npm install --no-progress
       - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry install
@@ -24,6 +26,7 @@ phases:
           -backend-config="key=${S3_KEY_TFSTATE}" \
           -backend-config="region=${AWS_REGION}"
   build:
+    on-failure: ABORT
     commands:
       - cd ${CODEBUILD_SRC_DIR}/frontend && npm run check-format
       - cd ${CODEBUILD_SRC_DIR}/frontend && npm run lint
@@ -35,6 +38,7 @@ phases:
       - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run mypy .
       - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run python -m unittest && poetry build-lambda
   post_build:
+    on-failure: ABORT
     commands:
       - cd ${CODEBUILD_SRC_DIR}/terraform && terraform apply -input=false -auto-approve
 

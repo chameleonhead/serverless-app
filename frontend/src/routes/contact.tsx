@@ -1,4 +1,10 @@
-import { Form, useLoaderData, useFetcher, LoaderFunctionArgs, ActionFunctionArgs } from 'react-router-dom';
+import {
+  Form,
+  useLoaderData,
+  useFetcher,
+  LoaderFunctionArgs,
+  ActionFunctionArgs,
+} from 'react-router-dom';
 import { Contact as ContactType, getContact, updateContact } from '../contacts';
 
 // eslint-disable-next-line react-refresh/only-export-components
