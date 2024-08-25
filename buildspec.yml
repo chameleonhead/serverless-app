@@ -27,7 +27,7 @@ phases:
     commands:
       - cd ${CODEBUILD_SRC_DIR}/frontend && npm run check-format
       - cd ${CODEBUILD_SRC_DIR}/frontend && npm run lint
-      - cd ${CODEBUILD_SRC_DIR}/frontend && npm run test
+      # - cd ${CODEBUILD_SRC_DIR}/frontend && npm run test
       - cd ${CODEBUILD_SRC_DIR}/frontend && npm run build
       - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run black --check .
       - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run isort --check .

@@ -1,9 +1,9 @@
-import { Form, useLoaderData, useFetcher } from 'react-router-dom';
+import { Form, useLoaderData, useFetcher, LoaderFunctionArgs, ActionFunctionArgs } from 'react-router-dom';
 import { Contact as ContactType, getContact, updateContact } from '../contacts';
 
 // eslint-disable-next-line react-refresh/only-export-components
-export async function loader({ params }: { params: { contactId: string } }) {
-  const contact = await getContact(params.contactId);
+export async function loader({ params }: LoaderFunctionArgs) {
+  const contact = await getContact(params.contactId!);
   if (!contact) {
     throw new Response('', {
       status: 404,
@@ -14,9 +14,9 @@ export async function loader({ params }: { params: { contactId: string } }) {
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
-export async function action({ request, params }: { request: Request, params: { contactId: string } }) {
+export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
-  return updateContact(params.contactId, {
+  return updateContact(params.contactId!, {
     favorite: formData.get('favorite') === 'true',
   });
 }
