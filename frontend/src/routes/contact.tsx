@@ -4,9 +4,9 @@ import { Contact as ContactType, getContact, updateContact } from '../contacts';
 export async function loader({ params }: any) {
   const contact = await getContact(params.contactId);
   if (!contact) {
-    throw new Response("", {
+    throw new Response('', {
       status: 404,
-      statusText: "Not Found",
+      statusText: 'Not Found',
     });
   }
   return { contact };

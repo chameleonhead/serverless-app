@@ -25,7 +25,14 @@ phases:
           -backend-config="region=${AWS_REGION}"
   build:
     commands:
+      - cd ${CODEBUILD_SRC_DIR}/frontend && npm run check-format
+      - cd ${CODEBUILD_SRC_DIR}/frontend && npm run lint
+      - cd ${CODEBUILD_SRC_DIR}/frontend && npm run test
       - cd ${CODEBUILD_SRC_DIR}/frontend && npm run build
+      - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run black --check .
+      - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run isort --check .
+      - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run flake8
+      - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run mypy .
       - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run python -m unittest && poetry build-lambda
   post_build:
     commands:
@@ -33,7 +40,7 @@ phases:
 
 artifacts:
   files:
-    - '**/*'
+    - "**/*"
 
 cache:
   paths:
