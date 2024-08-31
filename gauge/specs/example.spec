@@ -5,7 +5,7 @@ Every heading in this file is a scenario.
 Every bulleted point is a step.
 
 To execute this specification, use
-	npm test
+	gauge run specs
 
 This is a context step that runs before every scenario
 * Open todo application
