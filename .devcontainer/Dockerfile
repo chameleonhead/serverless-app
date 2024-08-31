@@ -18,4 +18,19 @@ RUN curl -sSL https://install.python-poetry.org | python3 - && \
     /home/vscode/.local/bin/poetry self add poetry-plugin-lambda-build
 
 USER root
-    
+
+RUN curl -SsL https://downloads.gauge.org/stable | sh
+
+RUN apt-get update \
+     && apt-get install -y wget gnupg ca-certificates \
+     && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+     && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
+     && apt-get update \
+     && apt-get install -y google-chrome-stable
+
+ENV NPM_CONFIG_PREFIX=/home/gauge/.npm-packages
+ENV PATH="${NPM_CONFIG_PREFIX}/bin:${PATH}"
+
+ENV TAIKO_BROWSER_ARGS=--no-sandbox,--start-maximized,--disable-dev-shm-usage
+ENV headless_chrome=true
+ENV TAIKO_SKIP_DOCUMENTATION=true

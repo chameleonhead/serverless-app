@@ -18,7 +18,8 @@
         "donjayamanne.git-extension-pack",
         "hashicorp.terraform",
         "esbenp.prettier-vscode",
-        "dbaeumer.vscode-eslint"
+        "dbaeumer.vscode-eslint",
+        "getgauge.gauge"
       ]
     }
   },

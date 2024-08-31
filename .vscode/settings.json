@@ -15,5 +15,9 @@
   "isort.args": ["--profile", "black"],
   "[terraform]": {
     "editor.defaultFormatter": "hashicorp.terraform"
+  },
+  "files.associations": {
+    "*.spec": "gauge",
+    "*.cpt": "gauge"
   }
 }
