@@ -8,15 +8,18 @@ phases:
       nodejs: "20"
     commands:
       - export PATH=$HOME/.local/bin:$PATH
+      - mkdir -p $HOME/.cache/downloads
       - |
         [ -n "$(which poetry)" ] || \
         (curl -sSL https://install.python-poetry.org | python3 - && poetry self add poetry-plugin-lambda-build)
       - |
         [ -n "$(which terraform)" ] || \
-        (curl -sSL https://releases.hashicorp.com/terraform/1.9.5/terraform_1.9.5_linux_amd64.zip -o /tmp/terraform.zip && unzip /tmp/terraform.zip -d $HOME/.local/bin)
+        (([ -e $HOME/.cache/downloads/terraform.zip ] || curl -sSL https://releases.hashicorp.com/terraform/1.9.5/terraform_1.9.5_linux_amd64.zip -o $HOME/.cache/downloads/terraform.zip) && unzip $HOME/.cache/downloads/terraform.zip -d $HOME/.local/bin)
+      - |
+        ([ -e $HOME/.cache/downloads/google-chrome-stable_current_x86_64.rpm ] || curl https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm -o $HOME/.cache/downloads/google-chrome-stable_current_x86_64.rpm) && yum install -y $HOME/.cache/downloads/google-chrome-stable_current_x86_64.rpm
       - |
         [ -n "$(which gauge)" ] || \
-        (curl -sSL https://github.com/getgauge/gauge/releases/download/v1.6.8/gauge-1.6.8-linux.x86_64.zip -o /tmp/gauge.zip && unzip /tmp/gauge.zip -d $HOME/.local/bin)
+        (([ -e $HOME/.cache/downloads/gauge.zip ] || curl -sSL https://github.com/getgauge/gauge/releases/download/v1.6.8/gauge-1.6.8-linux.x86_64.zip -o $HOME/.cache/downloads/gauge.zip) && unzip $HOME/.cache/downloads/gauge.zip -d $HOME/.local/bin)
   pre_build:
     on-failure: ABORT
     commands:
@@ -29,6 +32,7 @@ phases:
           -backend-config="key=${S3_KEY_TFSTATE}" \
           -backend-config="region=${AWS_REGION}"
       - cd ${CODEBUILD_SRC_DIR}/gauge && npm install --no-progress && gauge install && gauge config check_updates false
+      - cd ${CODEBUILD_SRC_DIR}/gauge && npm install --no-progress
   build:
     on-failure: ABORT
     commands:
@@ -41,12 +45,13 @@ phases:
       - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run flake8
       - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run mypy .
       - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run python -m unittest && poetry build-lambda
+      - |
+        [ ${CODEBUILD_BUILD_SUCCEEDING} -eq 1 ] && cd ${CODEBUILD_SRC_DIR}/terraform && terraform apply -input=false -auto-approve
+      - cd ${CODEBUILD_SRC_DIR}/gauge && TAIKO_BROWSER_ARGS=--no-sandbox,--start-maximized,--disable-dev-shm-usage npm run test
   post_build:
     on-failure: ABORT
     commands:
-      - |
-        [ ${CODEBUILD_BUILD_SUCCEEDING} -eq 1 ] && cd ${CODEBUILD_SRC_DIR}/terraform && terraform apply -input=false -auto-approve
-      - cd ${CODEBUILD_SRC_DIR}/gauge && npm run test
+      - echo "Post build"
 
 artifacts:
   files:
@@ -56,4 +61,5 @@ cache:
   paths:
     - /root/.local/**/*
     - /root/.cache/pip/**/*
+    - /root/.cache/downloads/**/*
     - terraform/.terraform/**/*

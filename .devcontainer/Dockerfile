@@ -21,12 +21,12 @@ USER root
 
 RUN curl -SsL https://downloads.gauge.org/stable | sh
 
-RUN apt-get update \
-     && apt-get install -y wget gnupg ca-certificates \
-     && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-     && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
-     && apt-get update \
-     && apt-get install -y google-chrome-stable
+RUN apt update \
+     && apt install -y wget gnupg ca-certificates \
+     && wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /etc/apt/trusted.gpg.d/chrome.gpg \
+     && sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
+     && apt update \
+     && apt install -y google-chrome-stable
 
 ENV NPM_CONFIG_PREFIX=/home/gauge/.npm-packages
 ENV PATH="${NPM_CONFIG_PREFIX}/bin:${PATH}"
