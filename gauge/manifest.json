@@ -1,6 +1,4 @@
 {
   "Language": "ts",
-  "Plugins": [
-    "xml-report"
-  ]
+  "Plugins": ["xml-report"]
 }
