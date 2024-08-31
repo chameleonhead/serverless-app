@@ -44,7 +44,8 @@ phases:
       - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run isort --check .
       - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run flake8
       - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run mypy .
-      - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run python -m unittest && poetry build-lambda
+      - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run pytest --junitxml=unittests.xml --cov-report=xml:coverage.xml --cov=./hello
+      - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry build-lambda
       - |
         [ ${CODEBUILD_BUILD_SUCCEEDING} -eq 1 ] && cd ${CODEBUILD_SRC_DIR}/terraform && terraform apply -input=false -auto-approve
       - cd ${CODEBUILD_SRC_DIR}/gauge && TAIKO_BROWSER_ARGS=--no-sandbox,--start-maximized,--disable-dev-shm-usage npm run test
@@ -52,6 +53,20 @@ phases:
     on-failure: ABORT
     commands:
       - echo "Post build"
+
+reports:
+  api-hello-unit-tests:
+    files:
+      - api/hello/unittests.xml
+    file-format: JUNITXML
+  api-hello-coverage-tests:
+    files:
+      - api/hello/coverage.xml
+    file-format: COBERTURAXML
+  gauge-tests:
+    files:
+      - gauge/reports/result.xml
+    file-format: JUNITXML
 
 artifacts:
   files:
