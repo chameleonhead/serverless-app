@@ -65,7 +65,7 @@ reports:
     file-format: COBERTURAXML
   gauge-tests:
     files:
-      - gauge/reports/xml-reports/result.xml
+      - gauge/reports/xml-report/result.xml
     file-format: JUNITXML
 
 artifacts:
