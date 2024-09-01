@@ -1,53 +1,69 @@
-# Getting Started with Gauge
+# サーバーレスアプリケーション
 
-This is an example markdown specification file.
-Every heading in this file is a scenario.
-Every bulleted point is a step.
+仕様を実行するためにはプロジェクトのルートフォルダ配下の `gauge` フォルダで以下のコマンドを実行する。
 
-To execute this specification, use
-	gauge run specs
+```bash
+gauge run specs
+```
 
-This is a context step that runs before every scenario
-* Open todo application
+以下のステップはすべてのシナリオで共通する
 
-## Display number of items
-* Add task "first task"
-* Must display "1 item left"
-* Add task "second task"
-* Must display "2 items left"
+* アプリケーションにアクセスする
+* 初期ページが表示される
 
-## Must list only active tasks
-* Add tasks 
+## 新規に連絡先を追加し変更する
 
-   |description|
+* 新規に連絡先を追加する
+* "No Name" という連絡先がサイドバーに表示される
+* サイドバーから "No Name" という連絡先を選択する
+* "No Name" という連絡先の詳細画面が表示される
+* 詳細画面で編集ボタンを押下する
+* すべて空欄の編集画面が表示される
+* First "Taro"、Last "Tanaka"、Twitter "@tanakataro"、アバターURL "https://robohash.org/abcde.png?size=200x200"、Notes "Notes\nNotes" として登録する
+* "Taro Tanaka" という連絡先の詳細画面が表示される
+* 詳細画面には Twitter "@tanakataro"、アバターURL "https://robohash.org/abcde.png?size=200x200"、Notes "Notes\nNotes" が表示されている
+
+## 連絡先を検索する
+
+* 以下の連絡先を追加する
+
+   |First  |Last     |Twitter          |
+   |-------|---------|-----------------|
+   |Taro   |Yamada   |@taroyamada      |
+   |Jiro   |Tanaka   |@jirotanaka      |
+   |Saburo |Sato     |@saburosato      |
+   |Hanako |Kimura   |@hanakokimura    |
+   |Sachiko|Takahashi|@sachikotakahashi|
+
+* 以下の連絡先がサイドバーに表示されること
+
+   |Name             |
+   |-----------------|
+   |Taro Yamada      |
+   |Jiro Tanaka      |
+   |Saburo Sato      |
+   |Hanako Kimura    |
+   |Sachiko Takahashi|
+
+* "Taro" を検索する
+* 以下の連絡先がサイドバーに表示されること
+
+   |Name       |
    |-----------|
-   |first task |
-   |second task|
-   |third task |
-   |fourth task|
-   |fifth task |
+   |Taro Yamada|
 
-* Complete tasks 
+* "Taro Yamada" を削除する
+* 以下の連絡先がサイドバーに表示されること
 
-   |description|
-   |-----------|
-   |second task|
-   |fifth task |
-* View "Active" tasks
-* Must have 
+   |Name             |
+   |-----------------|
+   |Jiro Tanaka      |
+   |Saburo Sato      |
+   |Hanako Kimura    |
+   |Sachiko Takahashi|
 
-   |description|
-   |-----------|
-   |first task |
-   |third task |
-   |fourth task|
-* Must not have 
-
-   |description|
-   |-----------|
-   |second task|
-   |fifth task |
-
-A tear down step for every scenario
 ___
-* Clear all tasks
+
+以下のタスクをすべてのシナリオの後に実行する
+
+* すべての連絡先を削除する

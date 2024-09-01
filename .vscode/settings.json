@@ -19,5 +19,8 @@
   "files.associations": {
     "*.spec": "gauge",
     "*.cpt": "gauge"
+  },
+  "[gauge]": {
+    "editor.defaultFormatter": "getgauge.gauge"
   }
 }

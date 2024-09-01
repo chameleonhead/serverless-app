@@ -46,8 +46,8 @@ phases:
       - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run mypy .
       - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run pytest --junitxml=unittests.xml --cov-report=xml:coverage.xml --cov=./hello
       - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry build-lambda
-      - |
-        [ ${CODEBUILD_BUILD_SUCCEEDING} -eq 1 ] && cd ${CODEBUILD_SRC_DIR}/terraform && terraform apply -input=false -auto-approve
+      - cd ${CODEBUILD_SRC_DIR}/terraform && terraform apply -input=false -auto-approve
+      - export SA_FRONTEND_URL=$(cd ${CODEBUILD_SRC_DIR}/terraform && terraform output frontend_domain_name | tr -d '"')
       - cd ${CODEBUILD_SRC_DIR}/gauge && TAIKO_BROWSER_ARGS=--no-sandbox,--start-maximized,--disable-dev-shm-usage npm run test
   post_build:
     on-failure: ABORT
