@@ -24,6 +24,7 @@ phases:
     on-failure: ABORT
     commands:
       - cd ${CODEBUILD_SRC_DIR}/frontend && npm install --no-progress
+      - cd ${CODEBUILD_SRC_DIR}/bff/auth && poetry install
       - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry install
       - |
         cd ${CODEBUILD_SRC_DIR}/terraform && echo -e "terraform {\n  backend \"s3\" {}\n}" > _override.tf && \
@@ -40,6 +41,12 @@ phases:
       - cd ${CODEBUILD_SRC_DIR}/frontend && npm run lint
       # - cd ${CODEBUILD_SRC_DIR}/frontend && npm run test
       - cd ${CODEBUILD_SRC_DIR}/frontend && npm run build
+      - cd ${CODEBUILD_SRC_DIR}/bff/auth && poetry run black --check .
+      - cd ${CODEBUILD_SRC_DIR}/bff/auth && poetry run isort --check .
+      - cd ${CODEBUILD_SRC_DIR}/bff/auth && poetry run flake8
+      - cd ${CODEBUILD_SRC_DIR}/bff/auth && poetry run mypy .
+      - cd ${CODEBUILD_SRC_DIR}/bff/auth && poetry run pytest --junitxml=unittests.xml --cov-report=xml:coverage.xml --cov=./auth
+      - cd ${CODEBUILD_SRC_DIR}/bff/auth && poetry build-lambda
       - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run black --check .
       - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run isort --check .
       - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry run flake8
@@ -55,12 +62,14 @@ phases:
       - echo "Post build"
 
 reports:
-  api-hello-unit-tests:
+  python-unit-tests:
     files:
+      - bff/auth/unittests.xml
       - api/hello/unittests.xml
     file-format: JUNITXML
-  api-hello-coverage-tests:
+  python-coverage-tests:
     files:
+      - bff/auth/coverage.xml
       - api/hello/coverage.xml
     file-format: COBERTURAXML
   gauge-tests:

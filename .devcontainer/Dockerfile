@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/base:ubuntu
+FROM --platform=linux/amd64 mcr.microsoft.com/devcontainers/base:ubuntu
 
 RUN apt update && \
     apt install -y software-properties-common && \
@@ -27,9 +27,6 @@ RUN apt update \
      && sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
      && apt update \
      && apt install -y google-chrome-stable
-
-ENV NPM_CONFIG_PREFIX=/home/gauge/.npm-packages
-ENV PATH="${NPM_CONFIG_PREFIX}/bin:${PATH}"
 
 ENV TAIKO_BROWSER_ARGS=--no-sandbox,--start-maximized,--disable-dev-shm-usage
 ENV headless_chrome=true
