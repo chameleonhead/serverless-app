@@ -4,20 +4,6 @@ data "aws_region" "current" {
 data "aws_caller_identity" "current" {
 }
 
-resource "aws_cognito_user_pool_client" "api_client" {
-  user_pool_id    = var.user_pool_id
-  name            = "${var.env_code}-cognito-client-api"
-  generate_secret = true
-  callback_urls = [
-    "https://${aws_apigatewayv2_api.api.id}.execute-api.${data.aws_region.current.name}.amazonaws.com"
-  ]
-  default_redirect_uri                 = "https://${aws_apigatewayv2_api.api.id}.execute-api.${data.aws_region.current.name}.amazonaws.com"
-  allowed_oauth_flows_user_pool_client = true
-  allowed_oauth_flows                  = ["implicit"]
-  allowed_oauth_scopes                 = ["openid", "profile", "email"]
-  supported_identity_providers         = ["COGNITO"]
-}
-
 resource "aws_apigatewayv2_api" "api" {
   name          = "${var.env_code}-apigw-api"
   protocol_type = "HTTP"
@@ -30,7 +16,7 @@ resource "aws_apigatewayv2_authorizer" "cognito_authorizer" {
   identity_sources = ["$request.header.Authorization"]
   jwt_configuration {
     issuer   = var.issuer
-    audience = [aws_cognito_user_pool_client.api_client.id]
+    audience = [var.audience]
   }
 }
 

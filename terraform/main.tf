@@ -6,16 +6,26 @@ module "idp" {
   env_code = var.env_code
 }
 
-module "api" {
-  source = "./modules/api"
+module "bff" {
+  source = "./modules/bff"
 
-  env_code     = var.env_code
-  issuer       = module.idp.issuer
-  user_pool_id = module.idp.user_pool_id
+  env_code = var.env_code
 }
 
 module "frontend" {
   source = "./modules/frontend"
 
-  env_code = var.env_code
+  env_code                 = var.env_code
+  user_pool_id             = module.idp.user_pool_id
+  issuer                   = module.idp.issuer
+  bff_auth_url_domain_name = module.bff.auth_function_domain_name
+}
+
+module "api" {
+  source = "./modules/api"
+
+  env_code     = var.env_code
+  issuer       = module.idp.issuer
+  audience     = module.frontend.serverless_app_audience
+  user_pool_id = module.idp.user_pool_id
 }

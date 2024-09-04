@@ -9,3 +9,7 @@ variable "user_pool_id" {
 variable "issuer" {
   type = string
 }
+
+variable "audience" {
+  type = string
+}
