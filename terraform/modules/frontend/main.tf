@@ -179,10 +179,23 @@ resource "aws_cognito_user_pool_client" "api_client" {
     "https://${aws_cloudfront_distribution.frontend.domain_name}/auth/callback"
   ]
   default_redirect_uri                 = "https://${aws_cloudfront_distribution.frontend.domain_name}/auth/callback"
+  explicit_auth_flows                  = ["ALLOW_ADMIN_USER_PASSWORD_AUTH", "ALLOW_REFRESH_TOKEN_AUTH"]
   allowed_oauth_flows_user_pool_client = true
   allowed_oauth_flows                  = ["implicit"]
   allowed_oauth_scopes                 = ["openid", "profile", "email"]
   supported_identity_providers         = ["COGNITO"]
+}
+
+resource "aws_secretsmanager_secret" "api_client" {
+  name = "${var.env_code}/serverless-app/api-client"
+}
+
+resource "aws_secretsmanager_secret_version" "api_client_main" {
+  secret_id = aws_secretsmanager_secret.api_client.id
+  secret_string = jsonencode({
+    "client_id"     = aws_cognito_user_pool_client.api_client.id,
+    "client_secret" = aws_cognito_user_pool_client.api_client.client_secret
+  })
 }
 
 resource "aws_lambda_permission" "auth_api" {

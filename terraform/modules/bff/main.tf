@@ -21,6 +21,33 @@ resource "aws_iam_role" "auth_role" {
   managed_policy_arns = ["arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"]
 }
 
+data "aws_iam_policy_document" "auth_role_policy" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "secretsmanager:GetSecretValue"
+    ]
+    resources = [
+      "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:${var.env_code}/serverless-app/api-client-*"
+    ]
+  }
+  statement {
+    effect = "Allow"
+    actions = [
+      "cognito-idp:AdminInitiateAuth"
+    ]
+    resources = [
+      "arn:aws:cognito-idp:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:userpool/${var.cognito_user_pool_id}"
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "auth_role_policy" {
+  role   = aws_iam_role.auth_role.id
+  policy = data.aws_iam_policy_document.auth_role_policy.json
+}
+
+
 resource "aws_lambda_function" "auth" {
   function_name    = "${var.env_code}-lambda-auth"
   role             = aws_iam_role.auth_role.arn
@@ -28,6 +55,12 @@ resource "aws_lambda_function" "auth" {
   source_code_hash = filesha1("../bff/auth/dist/package.zip")
   runtime          = "python3.11"
   handler          = "auth.handler"
+  environment {
+    variables = {
+      "USER_POOL_ID"         = var.cognito_user_pool_id
+      "API_CLIENT_SECRET_ID" = "${var.env_code}/serverless-app/api-client"
+    }
+  }
 }
 
 resource "aws_lambda_function_url" "auth_url" {
