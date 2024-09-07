@@ -71,6 +71,7 @@ resource "aws_cloudfront_distribution" "frontend" {
     domain_name              = var.bff_auth_url_domain_name
     origin_access_control_id = aws_cloudfront_origin_access_control.lambda.id
     origin_path              = "/auth"
+
     custom_origin_config {
       http_port              = 80
       https_port             = 443
@@ -161,7 +162,6 @@ resource "aws_s3_object" "dist" {
   content_type = lookup(local.content_type_map, split(".", each.value)[1], "application/octet-stream")
 }
 
-
 resource "aws_s3_object" "dist_index" {
   bucket        = aws_s3_bucket.frontend_assets.bucket
   key           = "index.html"
@@ -185,4 +185,9 @@ resource "aws_cognito_user_pool_client" "api_client" {
   supported_identity_providers         = ["COGNITO"]
 }
 
-
+resource "aws_lambda_permission" "auth_api" {
+  function_name = var.bff_auth_function_name
+  action        = "lambda:InvokeFunctionUrl"
+  principal     = "cloudfront.amazonaws.com"
+  source_arn    = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.frontend.id}"
+}

@@ -18,6 +18,7 @@ module "frontend" {
   env_code                 = var.env_code
   user_pool_id             = module.idp.user_pool_id
   issuer                   = module.idp.issuer
+  bff_auth_function_name   = module.bff.auth_function_name
   bff_auth_url_domain_name = module.bff.auth_function_domain_name
 }
 

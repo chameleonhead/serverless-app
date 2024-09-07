@@ -34,10 +34,3 @@ resource "aws_lambda_function_url" "auth_url" {
   function_name      = aws_lambda_function.auth.function_name
   authorization_type = "AWS_IAM"
 }
-
-resource "aws_lambda_permission" "auth_api" {
-  function_name = aws_lambda_function.auth.function_name
-  action        = "lambda:InvokeFunctionUrl"
-  principal     = "cloudfront.amazonaws.com"
-  source_arn    = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/*"
-}
