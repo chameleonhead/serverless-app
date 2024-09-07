@@ -19,7 +19,8 @@
         "hashicorp.terraform",
         "esbenp.prettier-vscode",
         "dbaeumer.vscode-eslint",
-        "getgauge.gauge"
+        "getgauge.gauge",
+        "ms-python.mypy-type-checker"
       ]
     }
   },

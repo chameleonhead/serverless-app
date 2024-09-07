@@ -3,9 +3,10 @@ import os
 import unittest
 import unittest.mock
 
-import auth
 import boto3
 import moto
+
+import auth
 
 
 class TestHandler(unittest.TestCase):
