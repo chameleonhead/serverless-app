@@ -1,8 +1,7 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
-import CssBaseline from '@mui/material/CssBaseline';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Divider from '@mui/material/Divider';
 import FormLabel from '@mui/material/FormLabel';
@@ -12,16 +11,10 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import MuiCard from '@mui/material/Card';
-import {
-  ThemeProvider,
-  createTheme,
-  styled,
-  PaletteMode,
-} from '@mui/material/styles';
+import { styled } from '@mui/material/styles';
 import ForgotPassword from './ForgotPassword';
-import getSignInTheme from '../theme/getSignInTheme';
 import { GoogleIcon, FacebookIcon, SitemarkIcon } from './CustomIcons';
-import TemplateFrame from './TemplateFrame';
+import TemplateFrame from '../theme/TemplateFrame';
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -55,40 +48,11 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
 }));
 
 export default function SignIn() {
-  const [mode, setMode] = useState<PaletteMode>('light');
-  const [showCustomTheme, setShowCustomTheme] = useState(true);
-  const SignInTheme = createTheme(getSignInTheme(mode));
-  const defaultTheme = createTheme({ palette: { mode } });
   const [emailError, setEmailError] = useState(false);
   const [emailErrorMessage, setEmailErrorMessage] = useState('');
   const [passwordError, setPasswordError] = useState(false);
   const [passwordErrorMessage, setPasswordErrorMessage] = useState('');
   const [open, setOpen] = useState(false);
-
-  // This code only runs on the client side, to determine the system color preference
-  useEffect(() => {
-    // Check if there is a preferred mode in localStorage
-    const savedMode = localStorage.getItem('themeMode') as PaletteMode | null;
-    if (savedMode) {
-      setMode(savedMode);
-    } else {
-      // If no preference is found, it uses system preference
-      const systemPrefersDark = window.matchMedia(
-        '(prefers-color-scheme: dark)'
-      ).matches;
-      setMode(systemPrefersDark ? 'dark' : 'light');
-    }
-  }, []);
-
-  const toggleColorMode = () => {
-    const newMode = mode === 'dark' ? 'light' : 'dark';
-    setMode(newMode);
-    localStorage.setItem('themeMode', newMode); // Save the selected mode to localStorage
-  };
-
-  const toggleCustomTheme = () => {
-    setShowCustomTheme((prev) => !prev);
-  };
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -135,130 +99,122 @@ export default function SignIn() {
   };
 
   return (
-    <TemplateFrame
-      toggleCustomTheme={toggleCustomTheme}
-      showCustomTheme={showCustomTheme}
-      mode={mode}
-      toggleColorMode={toggleColorMode}
-    >
-      <ThemeProvider theme={showCustomTheme ? SignInTheme : defaultTheme}>
-        <CssBaseline enableColorScheme />
-        <SignInContainer direction="column" justifyContent="space-between">
-          <Card variant="outlined">
-            <SitemarkIcon />
-            <Typography
-              component="h1"
-              variant="h4"
-              sx={{ width: '100%', fontSize: 'clamp(2rem, 10vw, 2.15rem)' }}
+    <TemplateFrame>
+      <SignInContainer direction="column" justifyContent="space-between">
+        <Card variant="outlined">
+          <SitemarkIcon />
+          <Typography
+            component="h1"
+            variant="h4"
+            sx={{ width: '100%', fontSize: 'clamp(2rem, 10vw, 2.15rem)' }}
+          >
+            Sign in
+          </Typography>
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            noValidate
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              width: '100%',
+              gap: 2,
+            }}
+          >
+            <FormControl>
+              <FormLabel htmlFor="email">Email</FormLabel>
+              <TextField
+                error={emailError}
+                helperText={emailErrorMessage}
+                id="email"
+                type="email"
+                name="email"
+                placeholder="your@email.com"
+                autoComplete="email"
+                autoFocus
+                required
+                fullWidth
+                variant="outlined"
+                color={emailError ? 'error' : 'primary'}
+                sx={{ ariaLabel: 'email' }}
+              />
+            </FormControl>
+            <FormControl>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <FormLabel htmlFor="password">Password</FormLabel>
+                <Link
+                  component="button"
+                  onClick={handleClickOpen}
+                  variant="body2"
+                  sx={{ alignSelf: 'baseline' }}
+                >
+                  Forgot your password?
+                </Link>
+              </Box>
+              <TextField
+                error={passwordError}
+                helperText={passwordErrorMessage}
+                name="password"
+                placeholder="••••••"
+                type="password"
+                id="password"
+                autoComplete="current-password"
+                autoFocus
+                required
+                fullWidth
+                variant="outlined"
+                color={passwordError ? 'error' : 'primary'}
+              />
+            </FormControl>
+            <FormControlLabel
+              control={<Checkbox value="remember" color="primary" />}
+              label="Remember me"
+            />
+            <ForgotPassword open={open} handleClose={handleClose} />
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              onClick={validateInputs}
             >
               Sign in
+            </Button>
+            <Typography sx={{ textAlign: 'center' }}>
+              Don&apos;t have an account?{' '}
+              <span>
+                <Link
+                  href="/material-ui/getting-started/templates/sign-in/"
+                  variant="body2"
+                  sx={{ alignSelf: 'center' }}
+                >
+                  Sign up
+                </Link>
+              </span>
             </Typography>
-            <Box
-              component="form"
-              onSubmit={handleSubmit}
-              noValidate
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                width: '100%',
-                gap: 2,
-              }}
+          </Box>
+          <Divider>or</Divider>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Button
+              type="submit"
+              fullWidth
+              variant="outlined"
+              onClick={() => alert('Sign in with Google')}
+              startIcon={<GoogleIcon />}
             >
-              <FormControl>
-                <FormLabel htmlFor="email">Email</FormLabel>
-                <TextField
-                  error={emailError}
-                  helperText={emailErrorMessage}
-                  id="email"
-                  type="email"
-                  name="email"
-                  placeholder="your@email.com"
-                  autoComplete="email"
-                  autoFocus
-                  required
-                  fullWidth
-                  variant="outlined"
-                  color={emailError ? 'error' : 'primary'}
-                  sx={{ ariaLabel: 'email' }}
-                />
-              </FormControl>
-              <FormControl>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <FormLabel htmlFor="password">Password</FormLabel>
-                  <Link
-                    component="button"
-                    onClick={handleClickOpen}
-                    variant="body2"
-                    sx={{ alignSelf: 'baseline' }}
-                  >
-                    Forgot your password?
-                  </Link>
-                </Box>
-                <TextField
-                  error={passwordError}
-                  helperText={passwordErrorMessage}
-                  name="password"
-                  placeholder="••••••"
-                  type="password"
-                  id="password"
-                  autoComplete="current-password"
-                  autoFocus
-                  required
-                  fullWidth
-                  variant="outlined"
-                  color={passwordError ? 'error' : 'primary'}
-                />
-              </FormControl>
-              <FormControlLabel
-                control={<Checkbox value="remember" color="primary" />}
-                label="Remember me"
-              />
-              <ForgotPassword open={open} handleClose={handleClose} />
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                onClick={validateInputs}
-              >
-                Sign in
-              </Button>
-              <Typography sx={{ textAlign: 'center' }}>
-                Don&apos;t have an account?{' '}
-                <span>
-                  <Link
-                    href="/material-ui/getting-started/templates/sign-in/"
-                    variant="body2"
-                    sx={{ alignSelf: 'center' }}
-                  >
-                    Sign up
-                  </Link>
-                </span>
-              </Typography>
-            </Box>
-            <Divider>or</Divider>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Button
-                type="submit"
-                fullWidth
-                variant="outlined"
-                onClick={() => alert('Sign in with Google')}
-                startIcon={<GoogleIcon />}
-              >
-                Sign in with Google
-              </Button>
-              <Button
-                type="submit"
-                fullWidth
-                variant="outlined"
-                onClick={() => alert('Sign in with Facebook')}
-                startIcon={<FacebookIcon />}
-              >
-                Sign in with Facebook
-              </Button>
-            </Box>
-          </Card>
-        </SignInContainer>
-      </ThemeProvider>
+              Sign in with Google
+            </Button>
+            <Button
+              type="submit"
+              fullWidth
+              variant="outlined"
+              onClick={() => alert('Sign in with Facebook')}
+              startIcon={<FacebookIcon />}
+            >
+              Sign in with Facebook
+            </Button>
+          </Box>
+        </Card>
+      </SignInContainer>
     </TemplateFrame>
   );
 }
