@@ -37,11 +37,15 @@ resource "aws_iam_role" "hello_role" {
   managed_policy_arns = ["arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"]
 }
 
+data "local_file" "hello_zip" {
+  filename = "${path.module}/../../../api/hello/dist/package.zip"
+}
+
 resource "aws_lambda_function" "hello" {
   function_name    = "${var.env_code}-lambda-hello"
   role             = aws_iam_role.hello_role.arn
-  filename         = "../api/hello/dist/package.zip"
-  source_code_hash = filesha1("../api/hello/dist/package.zip")
+  filename         = data.local_file.hello_zip.filename
+  source_code_hash = data.local_file.hello_zip.content_md5
   runtime          = "python3.11"
   handler          = "hello.handler"
 }

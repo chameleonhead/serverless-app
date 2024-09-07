@@ -47,12 +47,15 @@ resource "aws_iam_role_policy" "auth_role_policy" {
   policy = data.aws_iam_policy_document.auth_role_policy.json
 }
 
+data "local_file" "auth_zip" {
+  filename = "${path.module}/../../../bff/auth/dist/package.zip"
+}
 
 resource "aws_lambda_function" "auth" {
   function_name    = "${var.env_code}-lambda-auth"
   role             = aws_iam_role.auth_role.arn
-  filename         = "../bff/auth/dist/package.zip"
-  source_code_hash = filesha1("../bff/auth/dist/package.zip")
+  filename         = data.local_file.auth_zip.filename
+  source_code_hash = data.local_file.auth_zip.content_md5
   runtime          = "python3.11"
   handler          = "auth.handler"
   environment {

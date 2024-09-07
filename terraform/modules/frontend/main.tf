@@ -157,16 +157,16 @@ resource "aws_s3_object" "dist" {
 
   bucket       = aws_s3_bucket.frontend_assets.bucket
   key          = each.value
-  source       = "../frontend/dist/${each.value}"
-  etag         = filemd5("../frontend/dist/${each.value}")
+  source       = "${path.module}/../../../frontend/dist/${each.value}"
+  etag         = filemd5("${path.module}/../../../frontend/dist/${each.value}")
   content_type = lookup(local.content_type_map, split(".", each.value)[1], "application/octet-stream")
 }
 
 resource "aws_s3_object" "dist_index" {
   bucket        = aws_s3_bucket.frontend_assets.bucket
   key           = "index.html"
-  source        = "../frontend/dist/index.html"
-  etag          = filemd5("../frontend/dist/index.html")
+  source        = "${path.module}/../../../frontend/dist/index.html"
+  etag          = filemd5("${path.module}/../../../frontend/dist/index.html")
   content_type  = "text/html"
   cache_control = "no-cache"
 }
