@@ -45,6 +45,7 @@ export default function PageViewsBarChart() {
               scaleType: 'band',
               categoryGapRatio: 0.5,
               data: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any,
           ]}
           series={[
