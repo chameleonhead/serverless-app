@@ -26,7 +26,8 @@ import {
 } from "taiko";
 import assert = require("assert");
 
-const frontend_url = process.env.SA_FRONTEND_URL || "http://localhost:5173";
+const frontend_url =
+  process.env.SA_FRONTEND_URL || "https://d35bruoc0bika4.cloudfront.net/";
 export default class StepImplementation {
   @BeforeSuite()
   public async beforeSuite() {
@@ -41,6 +42,13 @@ export default class StepImplementation {
   @Step("アプリケーションにアクセスする")
   public async openTodo() {
     await goto(frontend_url);
+  }
+
+  @Step("ユーザー <username> でログインする")
+  public async login(username: string) {
+    await write(username, into(textBox("Email")));
+    await write("P@ssw0rd", into(textBox("Password")));
+    await click(button("SIGN IN"));
   }
 
   @Step("初期ページが表示される")
