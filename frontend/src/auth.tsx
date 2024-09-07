@@ -53,7 +53,7 @@ export const AuthContextProvider = ({ children }: PropsWithChildren) => {
   const [isAuthenticated, setAuthenticated] = useState<boolean>(false);
   useEffect(() => {
     if (!isAuthenticated) {
-      login({ username: 'user@example.com', password: 'P@ssw0rd' }).then(() =>
+      login({ username: 'admin@example.com', password: 'P@ssw0rd' }).then(() =>
         setAuthenticated(true)
       );
     }
