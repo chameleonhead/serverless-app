@@ -1,4 +1,6 @@
 export default function Index() {
+  import('../index.css');
+
   return (
     <p id="zero-state">
       This is a demo for React Router.

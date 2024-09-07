@@ -9,7 +9,7 @@ import TemplateFrame from '../theme/TemplateFrame';
 
 export default function Dashboard() {
   return (
-    <TemplateFrame>
+    <TemplateFrame showAppBar={true}>
       <Box sx={{ display: 'flex' }}>
         <SideMenu />
         <AppNavbar />

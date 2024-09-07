@@ -15,6 +15,8 @@ import { styled } from '@mui/material/styles';
 import ForgotPassword from './ForgotPassword';
 import { GoogleIcon, FacebookIcon, SitemarkIcon } from './CustomIcons';
 import TemplateFrame from '../theme/TemplateFrame';
+import { useAuth } from '../auth';
+import { Navigate, useNavigation } from 'react-router-dom';
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -53,6 +55,8 @@ export default function SignIn() {
   const [passwordError, setPasswordError] = useState(false);
   const [passwordErrorMessage, setPasswordErrorMessage] = useState('');
   const [open, setOpen] = useState(false);
+  const { isAuthenticated, login } = useAuth();
+  const navigation = useNavigation();
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -62,12 +66,12 @@ export default function SignIn() {
     setOpen(false);
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    console.log({
-      email: data.get('email'),
-      password: data.get('password'),
+    await login({
+      username: data.get('email') as string,
+      password: data.get('password') as string,
     });
   };
 
@@ -98,8 +102,12 @@ export default function SignIn() {
     return isValid;
   };
 
+  if (isAuthenticated) {
+    return <Navigate to={navigation.location?.state || '/'} replace />;
+  }
+
   return (
-    <TemplateFrame>
+    <TemplateFrame showAppBar={false}>
       <SignInContainer direction="column" justifyContent="space-between">
         <Card variant="outlined">
           <SitemarkIcon />

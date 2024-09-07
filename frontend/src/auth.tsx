@@ -1,10 +1,4 @@
-import {
-  createContext,
-  PropsWithChildren,
-  useContext,
-  useEffect,
-  useState,
-} from 'react';
+import { createContext, PropsWithChildren, useContext, useState } from 'react';
 
 export class LoginFailedError extends Error {}
 
@@ -15,13 +9,12 @@ const hashPayload = async (payload: string) => {
   return hashArray.map((bytes) => bytes.toString(16).padStart(2, '0')).join('');
 };
 
-export async function login({
-  username,
-  password,
-}: {
+type LoginParam = {
   username: string;
   password: string;
-}) {
+};
+
+async function login({ username, password }: LoginParam) {
   const requestBody = JSON.stringify({ username, password });
   const sha256hash = await hashPayload(requestBody);
 
@@ -44,20 +37,33 @@ export async function login({
   }
 }
 
-const AuthContext = createContext({
-  isAuthenticated: false,
-  login: async (_: Parameters<typeof login>[0]) => {},
-});
+async function logout() {
+  const response = await fetch('/auth/logout', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    switch (response.status) {
+      default:
+        throw new Error('Logout failed.');
+    }
+  }
+}
+
+type AuthContextValue = {
+  isAuthenticated: boolean;
+  login: (request: LoginParam) => Promise<void>;
+  logout: () => Promise<void>;
+};
+
+const AuthContext = createContext({} as AuthContextValue);
 
 export const AuthContextProvider = ({ children }: PropsWithChildren) => {
   const [isAuthenticated, setAuthenticated] = useState<boolean>(false);
-  useEffect(() => {
-    if (!isAuthenticated) {
-      login({ username: 'admin@example.com', password: 'P@ssw0rd' }).then(() =>
-        setAuthenticated(true)
-      );
-    }
-  });
+
   return (
     <AuthContext.Provider
       value={{
@@ -65,6 +71,10 @@ export const AuthContextProvider = ({ children }: PropsWithChildren) => {
         login: async (req) => {
           await login(req);
           setAuthenticated(true);
+        },
+        logout: async () => {
+          await logout();
+          setAuthenticated(false);
         },
       }}
     >
