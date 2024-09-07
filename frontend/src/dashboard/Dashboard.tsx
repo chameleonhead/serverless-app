@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useEffect, useState } from 'react';
 import {
   PaletteMode,
   createTheme,
@@ -16,12 +16,12 @@ import SideMenu from './components/SideMenu';
 import TemplateFrame from './TemplateFrame';
 
 export default function Dashboard() {
-  const [mode, setMode] = React.useState<PaletteMode>('light');
-  const [showCustomTheme, setShowCustomTheme] = React.useState(true);
+  const [mode, setMode] = useState<PaletteMode>('light');
+  const [showCustomTheme, setShowCustomTheme] = useState(true);
   const dashboardTheme = createTheme(getDashboardTheme(mode));
   const defaultTheme = createTheme({ palette: { mode } });
   // This code only runs on the client side, to determine the system color preference
-  React.useEffect(() => {
+  useEffect(() => {
     // Check if there is a preferred mode in localStorage
     const savedMode = localStorage.getItem('themeMode') as PaletteMode | null;
     if (savedMode) {
