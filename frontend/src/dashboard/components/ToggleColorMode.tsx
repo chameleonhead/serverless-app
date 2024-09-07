@@ -1,10 +1,9 @@
 import { PaletteMode } from '@mui/material/styles';
-import IconButton, { IconButtonProps } from '@mui/material/IconButton';
-
-import ModeNightRoundedIcon from '@mui/icons-material/ModeNightRounded';
 import WbSunnyRoundedIcon from '@mui/icons-material/WbSunnyRounded';
+import ModeNightRoundedIcon from '@mui/icons-material/ModeNightRounded';
+import MenuButton, { MenuButtonProps } from './MenuButton';
 
-interface ToggleColorModeProps extends IconButtonProps {
+interface ToggleColorModeProps extends MenuButtonProps {
   mode: PaletteMode;
   toggleColorMode: () => void;
 }
@@ -15,11 +14,10 @@ export default function ToggleColorMode({
   ...props
 }: ToggleColorModeProps) {
   return (
-    <IconButton
+    <MenuButton
       onClick={toggleColorMode}
       size="small"
-      color="primary"
-      aria-label="Theme toggle button"
+      aria-label="button to toggle theme"
       {...props}
     >
       {mode === 'dark' ? (
@@ -27,6 +25,6 @@ export default function ToggleColorMode({
       ) : (
         <ModeNightRoundedIcon fontSize="small" />
       )}
-    </IconButton>
+    </MenuButton>
   );
 }

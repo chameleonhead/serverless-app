@@ -14,8 +14,8 @@ import Box from '@mui/material/Box';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
-import ToggleColorMode from './ToggleColorMode';
-import getSignInTheme from '../theme/getSignInTheme';
+import ToggleColorMode from './components/ToggleColorMode';
+import getDashboardTheme from '../theme/getDashboardTheme';
 
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
   position: 'relative',
@@ -50,10 +50,10 @@ export default function TemplateFrame({
   const handleChange = (event: SelectChangeEvent) => {
     toggleCustomTheme(event.target.value === 'custom');
   };
-  const signInTheme = createTheme(getSignInTheme(mode));
+  const dashboardTheme = createTheme(getDashboardTheme(mode));
 
   return (
-    <ThemeProvider theme={signInTheme}>
+    <ThemeProvider theme={dashboardTheme}>
       <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column' }}>
         <StyledAppBar>
           <Toolbar
