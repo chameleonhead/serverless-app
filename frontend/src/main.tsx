@@ -14,6 +14,7 @@ import EditContact, { action as editAction } from './routes/edit';
 import { action as destroyAction } from './routes/destroy';
 import ErrorPage from './error-page';
 import './index.css';
+import { AuthContextProvider } from './auth';
 
 const router = createBrowserRouter([
   {
@@ -51,6 +52,8 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <AuthContextProvider>
+      <RouterProvider router={router} />
+    </AuthContextProvider>
   </StrictMode>
 );
