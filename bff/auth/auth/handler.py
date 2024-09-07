@@ -8,9 +8,14 @@ import os
 import boto3
 import botocore
 import botocore.exceptions
+from jose import jwt
 
-logger = logging.Logger(name=__name__)
-logging.basicConfig(handlers=[logging.StreamHandler()])
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO,
+    format="{asctime} [{levelname:.4}] {name}: {message}",
+    style="{",
+)
 
 
 def generate_secret_hash(client_id, client_secret, username):
@@ -57,16 +62,27 @@ def handler(event, context):
                 ),
             },
         )
-        print(response)
-        token = response["AuthenticationResult"]["RefreshToken"]
-        maxage = response["AuthenticationResult"]["ExpiresIn"]
+
+        result = response["AuthenticationResult"]
+        id_token = result["IdToken"]
+        access_token = result["AccessToken"]
+        refresh_token = result["RefreshToken"]
+        expires_in = result["ExpiresIn"]
+        claims = jwt.get_unverified_claims(id_token)
+        logger.info("User %s logged in", claims["sub"])
+        set_cookie = f"session_id={refresh_token}; Max-Age={expires_in}"
         return {
             "statusCode": 200,
             "headers": {
                 "Content-Type": "application/json",
-                "Set-Cookie": f"session_id={token}; Max-Age={maxage}",
+                "Set-Cookie": set_cookie,
             },
-            "body": json.dumps({"message": "hello, world."}),
+            "body": json.dumps(
+                {
+                    "access_token": access_token,
+                    "id_token": id_token,
+                }
+            ),
         }
     except botocore.exceptions.ClientError as e:
         logger.exception(e)

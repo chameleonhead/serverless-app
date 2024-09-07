@@ -79,10 +79,9 @@ class TestHandler(unittest.TestCase):
                 },
                 None,
             )
-        self.assertEqual(
-            {"message": "hello, world."},
-            json.loads(result["body"]),
-        )
+        self.assertEqual(200, result["statusCode"])
+        self.assertIsNotNone(json.loads(result["body"])["id_token"])
+        self.assertIsNotNone(json.loads(result["body"])["access_token"])
 
 
 if __name__ == "__main__":
