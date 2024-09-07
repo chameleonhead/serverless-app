@@ -1,0 +1,14 @@
+{
+    "recommendations": [
+        "ms-python.python",
+        "ms-python.black-formatter",
+        "ms-python.flake8",
+        "ms-python.isort",
+        "amazonwebservices.aws-toolkit-vscode",
+        "donjayamanne.git-extension-pack",
+        "hashicorp.terraform",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "getgauge.gauge"
+    ]
+}
