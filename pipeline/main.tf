@@ -111,11 +111,6 @@ resource "aws_codepipeline" "pipeline" {
   artifact_store {
     location = aws_s3_bucket.artifact_bucket.bucket
     type     = "S3"
-
-    encryption_key {
-      id   = aws_kms_key.kms_key.id
-      type = "KMS"
-    }
   }
 
   stage {
@@ -220,20 +215,6 @@ data "aws_iam_policy_document" "codepipeline_policy" {
   }
 
   statement {
-    effect = "Allow"
-
-    actions = [
-      "kms:Encrypt",
-      "kms:Decrypt",
-      "kms:GenerateDataKey",
-    ]
-
-    resources = [
-      aws_kms_key.kms_key.arn
-    ]
-  }
-
-  statement {
     effect    = "Allow"
     actions   = ["codestar-connections:UseConnection"]
     resources = [aws_codestarconnections_connection.serverless_app_connection.arn]
@@ -257,30 +238,53 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
   policy = data.aws_iam_policy_document.codepipeline_policy.json
 }
 
-data "aws_iam_policy_document" "kms_key_policy" {
+// notification
+resource "aws_sns_topic" "codepipeline" {
+  name = "${var.env_code}-sns-codepipeline-state-change"
+}
+
+resource "aws_sns_topic_policy" "codepipeline" {
+  arn    = aws_sns_topic.codepipeline.arn
+  policy = data.aws_iam_policy_document.sns_topic_policy.json
+}
+
+data "aws_iam_policy_document" "sns_topic_policy" {
   statement {
-    effect = "Allow"
+    effect  = "Allow"
+    actions = ["sns:Publish"]
 
     principals {
-      type        = "AWS"
-      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+      type        = "Service"
+      identifiers = ["events.amazonaws.com"]
     }
 
-    actions = [
-      "*",
-    ]
-
-    resources = [
-      "*"
-    ]
+    resources = ["${aws_sns_topic.codepipeline.arn}"]
   }
 }
 
-resource "aws_kms_key" "kms_key" {
-  policy = data.aws_iam_policy_document.kms_key_policy.json
+resource "aws_cloudwatch_event_rule" "codepipeline" {
+  name = "${var.env_code}-evt-rule-codepipeline-state-change"
+
+  event_pattern = jsonencode({
+    "source" = [
+      "aws.codepipeline"
+    ],
+    "detail-type" = [
+      "CodePipeline Pipeline Execution State Change"
+    ]
+  })
 }
 
-resource "aws_kms_alias" "codepipeline_key" {
-  name          = "alias/${var.env_code}-kms-key-codepipeline"
-  target_key_id = aws_kms_key.kms_key.id
+resource "aws_cloudwatch_event_target" "codepipeline_to_sns" {
+  rule = aws_cloudwatch_event_rule.codepipeline.name
+  arn  = aws_sns_topic.codepipeline.arn
+
+  input_transformer {
+    input_paths = {
+      PipelineName = "$.detail.pipeline"
+      State        = "$.detail.state"
+    }
+
+    input_template = "\"Pipeline [<PipelineName>] execution state changed [<State>]\""
+  }
 }
