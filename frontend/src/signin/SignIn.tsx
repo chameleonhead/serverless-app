@@ -40,11 +40,14 @@ const Card = styled(MuiCard)(({ theme }) => ({
 }));
 
 const SignInContainer = styled(Stack)(({ theme }) => ({
-  padding: 20,
+  padding: theme.spacing(1),
   backgroundColor: 'hsl(0, 0%, 100%))',
   ...theme.applyStyles('dark', {
     backgroundColor: 'hsl(220, 30%, 5%))',
   }),
+  [theme.breakpoints.up('sm')]: {
+    padding: theme.spacing(4),
+  },
 }));
 
 export default function SignIn() {
@@ -108,7 +111,9 @@ export default function SignIn() {
     <TemplateFrame showAppBar={false}>
       <SignInContainer direction="column" justifyContent="space-between">
         <Card variant="outlined">
-          <LogoIcon />
+          <Box sx={{ pb: 1 }}>
+            <LogoIcon />
+          </Box>
           <Typography
             component="h1"
             variant="h4"
@@ -120,12 +125,12 @@ export default function SignIn() {
             component="form"
             onSubmit={handleSubmit}
             noValidate
-            sx={{
+            sx={(theme) => ({
               display: 'flex',
               flexDirection: 'column',
               width: '100%',
-              gap: 2,
-            }}
+              gap: theme.spacing(2),
+            })}
           >
             <FormControl>
               <FormLabel htmlFor="email">メールアドレス</FormLabel>

@@ -159,26 +159,18 @@ data "external" "frontend_dist" {
 
 data "local_file" "dist" {
   depends_on = [data.external.frontend_dist]
-  for_each   = toset([for s in fileset("${path.module}/../../../frontend/dist", "**") : s if s != "index.html"])
+  for_each   = toset([for s in fileset("${path.module}/../../../frontend/dist", "**") : s])
   filename   = "${path.module}/../../../frontend/dist/${each.value}"
 }
 
 resource "aws_s3_object" "dist" {
-  for_each     = toset([for i in data.local_file.dist : i.filename])
-  bucket       = aws_s3_bucket.frontend_assets.bucket
-  key          = replace(each.value, "${path.module}/../../../frontend/dist/", "")
-  source       = each.value
-  etag         = filemd5(each.value)
-  content_type = lookup(local.content_type_map, element(split(".", each.value), length(split(".", each.value)) - 1), "application/octet-stream")
-}
-
-resource "aws_s3_object" "dist_index" {
+  for_each      = toset([for i in data.local_file.dist : i.filename])
   bucket        = aws_s3_bucket.frontend_assets.bucket
-  key           = "index.html"
-  source        = "${path.module}/../../../frontend/dist/index.html"
-  etag          = filemd5("${path.module}/../../../frontend/dist/index.html")
-  content_type  = "text/html"
-  cache_control = "no-cache"
+  key           = replace(each.value, "${path.module}/../../../frontend/dist/", "")
+  source        = each.value
+  etag          = filemd5(each.value)
+  content_type  = lookup(local.content_type_map, element(split(".", each.value), length(split(".", each.value)) - 1), "application/octet-stream")
+  cache_control = element(split("/", each.value), length(split("/", each.value)) - 1) == "index.html" ? "no-cache" : null
 }
 
 resource "aws_cognito_user_pool_client" "api_client" {

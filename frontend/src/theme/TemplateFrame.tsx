@@ -37,7 +37,6 @@ export default function TemplateFrame({
   children,
 }: TemplateFrameProps) {
   const [mode, setMode] = useState<PaletteMode>(getDefaultMode());
-  console.log(mode);
   const defaultTheme = createTheme({ palette: { mode } });
 
   const toggleColorMode = () => {
