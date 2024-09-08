@@ -169,7 +169,7 @@ resource "aws_s3_object" "dist" {
   key          = replace(each.value, "${path.module}/../../../frontend/dist/", "")
   source       = each.value
   etag         = filemd5(each.value)
-  content_type = lookup(local.content_type_map, split(".", each.value)[1], "application/octet-stream")
+  content_type = lookup(local.content_type_map, element(split(".", each.value), length(split(".", each.value)) - 1), "application/octet-stream")
 }
 
 resource "aws_s3_object" "dist_index" {
