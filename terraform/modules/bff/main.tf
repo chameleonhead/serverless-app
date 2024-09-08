@@ -47,8 +47,14 @@ resource "aws_iam_role_policy" "auth_role_policy" {
   policy = data.aws_iam_policy_document.auth_role_policy.json
 }
 
+data "external" "auth_zip" {
+  program     = ["bash", "./build.sh"]
+  working_dir = "${path.module}/../../../bff/auth"
+}
+
 data "local_file" "auth_zip" {
-  filename = "${path.module}/../../../bff/auth/dist/package.zip"
+  depends_on = [data.external.auth_zip]
+  filename   = "${path.module}/../../../bff/auth/dist/package.zip"
 }
 
 resource "aws_lambda_function" "auth" {

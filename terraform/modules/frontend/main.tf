@@ -152,13 +152,23 @@ locals {
   }
 }
 
-resource "aws_s3_object" "dist" {
-  for_each = toset([for s in fileset("../frontend/dist", "**") : s if s != "index.html"])
+data "external" "frontend_dist" {
+  program     = ["bash", "./build.sh"]
+  working_dir = "${path.module}/../../../frontend"
+}
 
+data "local_file" "dist" {
+  depends_on = [data.external.frontend_dist]
+  for_each   = toset([for s in fileset("${path.module}/../../../frontend/dist", "**") : s if s != "index.html"])
+  filename   = "${path.module}/../../../frontend/dist/${each.value}"
+}
+
+resource "aws_s3_object" "dist" {
+  for_each     = toset([for i in data.local_file.dist : i.filename])
   bucket       = aws_s3_bucket.frontend_assets.bucket
-  key          = each.value
-  source       = "${path.module}/../../../frontend/dist/${each.value}"
-  etag         = filemd5("${path.module}/../../../frontend/dist/${each.value}")
+  key          = replace(each.value, "${path.module}/../../../frontend/dist/", "")
+  source       = each.value
+  etag         = filemd5(each.value)
   content_type = lookup(local.content_type_map, split(".", each.value)[1], "application/octet-stream")
 }
 

@@ -37,8 +37,14 @@ resource "aws_iam_role" "hello_role" {
   managed_policy_arns = ["arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"]
 }
 
+data "external" "hello_zip" {
+  program     = ["bash", "./build.sh"]
+  working_dir = "${path.module}/../../../api/hello"
+}
+
 data "local_file" "hello_zip" {
-  filename = "${path.module}/../../../api/hello/dist/package.zip"
+  depends_on = [data.external.hello_zip]
+  filename   = "${path.module}/../../../api/hello/dist/package.zip"
 }
 
 resource "aws_lambda_function" "hello" {
