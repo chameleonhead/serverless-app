@@ -46,9 +46,9 @@ export default class StepImplementation {
 
   @Step("ユーザー <username> でログインする")
   public async login(username: string) {
-    await write(username, into(textBox("Email")));
-    await write("P@ssw0rd", into(textBox("Password")));
-    await click(button("SIGN IN"));
+    await write(username, into(textBox("メールアドレス")));
+    await write("P@ssw0rd", into(textBox("パスワード")));
+    await click(button("ログイン"));
   }
 
   @Step("初期ページが表示される")

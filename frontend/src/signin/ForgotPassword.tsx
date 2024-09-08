@@ -1,11 +1,15 @@
-import * as React from 'react';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
-import OutlinedInput from '@mui/material/OutlinedInput';
+import FormControl from '@mui/material/FormControl';
+import FormLabel from '@mui/material/FormLabel';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import { useAuth } from '../auth';
+import { useEffect, useState } from 'react';
 
 interface ForgotPasswordProps {
   open: boolean;
@@ -16,42 +20,59 @@ export default function ForgotPassword({
   open,
   handleClose,
 }: ForgotPasswordProps) {
+  const { resetPassword } = useAuth();
+  const [successMessage, setSuccessMessage] = useState('');
+
+  useEffect(() => {
+    if (!open) {
+      setSuccessMessage('');
+    }
+  }, [open]);
   return (
     <Dialog
       open={open}
       onClose={handleClose}
       PaperProps={{
         component: 'form',
-        onSubmit: (event: React.FormEvent<HTMLFormElement>) => {
+        onSubmit: async (event: React.FormEvent<HTMLFormElement>) => {
           event.preventDefault();
+          const data = new FormData(event.currentTarget);
+          await resetPassword({
+            email: data.get('email') as string,
+          });
           handleClose();
         },
       }}
     >
-      <DialogTitle>Reset password</DialogTitle>
+      <DialogTitle>パスワードをリセットする</DialogTitle>
       <DialogContent
         sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}
       >
         <DialogContentText>
-          Enter your account&apos;s email address, and we&apos;ll send you a
-          link to reset your password.
+          ログイン用のメールアドレスを入力してください。後ほどパスワードをリセットするためのリンクを記載してメールを送信します。
+          {successMessage ? <Typography>{successMessage}</Typography> : null}
         </DialogContentText>
-        <OutlinedInput
-          autoFocus
-          required
-          margin="dense"
-          id="email"
-          name="email"
-          label="Email address"
-          placeholder="Email address"
-          type="email"
-          fullWidth
-        />
+        <FormControl>
+          <FormLabel htmlFor="email">メールアドレス</FormLabel>
+          <TextField
+            id="email"
+            type="email"
+            name="email"
+            placeholder="ログイン用のメールアドレス"
+            autoComplete="email"
+            autoFocus
+            required
+            fullWidth
+            variant="outlined"
+            color={'primary'}
+            sx={{ ariaLabel: 'email' }}
+          />
+        </FormControl>
       </DialogContent>
       <DialogActions sx={{ pb: 3, px: 3 }}>
-        <Button onClick={handleClose}>Cancel</Button>
+        <Button onClick={handleClose}>キャンセル</Button>
         <Button variant="contained" type="submit">
-          Continue
+          続ける
         </Button>
       </DialogActions>
     </Dialog>

@@ -5,7 +5,6 @@ export default function getDefaultMode() {
   if (savedMode) {
     return savedMode;
   } else {
-    // If no preference is found, it uses system preference
     const systemPrefersDark = window.matchMedia(
       '(prefers-color-scheme: dark)'
     ).matches;

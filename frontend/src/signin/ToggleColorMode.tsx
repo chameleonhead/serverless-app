@@ -19,7 +19,7 @@ export default function ToggleColorMode({
       onClick={toggleColorMode}
       size="small"
       color="primary"
-      aria-label="Theme toggle button"
+      aria-label="テーマ切り替えボタン"
       {...props}
     >
       {mode === 'dark' ? (

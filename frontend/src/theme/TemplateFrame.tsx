@@ -37,52 +37,42 @@ export default function TemplateFrame({
   children,
 }: TemplateFrameProps) {
   const [mode, setMode] = useState<PaletteMode>(getDefaultMode());
+  console.log(mode);
   const defaultTheme = createTheme({ palette: { mode } });
 
   const toggleColorMode = () => {
     const newMode = mode === 'dark' ? 'light' : 'dark';
     setMode(newMode);
-    localStorage.setItem('themeMode', newMode); // Save the selected mode to localStorage
+    localStorage.setItem('themeMode', newMode);
   };
-
-  if (showAppBar) {
-    return (
-      <ThemeProvider theme={defaultTheme}>
-        <CssBaseline enableColorScheme />
-        <Box
-          sx={{ height: '100dvh', display: 'flex', flexDirection: 'column' }}
-        >
-          <StyledAppBar>
-            <Toolbar
-              variant="dense"
-              disableGutters
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                width: '100%',
-                p: '8px 12px',
-              }}
-            >
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <ToggleColorMode
-                  data-screenshot="toggle-mode"
-                  mode={mode}
-                  toggleColorMode={toggleColorMode}
-                />
-              </Box>
-            </Toolbar>
-          </StyledAppBar>
-          <Box sx={{ flex: '1 1', overflow: 'auto' }}>{children}</Box>
-        </Box>
-      </ThemeProvider>
-    );
-  }
 
   return (
     <ThemeProvider theme={defaultTheme}>
       <CssBaseline enableColorScheme />
+      {showAppBar ? (
+        <StyledAppBar>
+          <Toolbar
+            variant="dense"
+            disableGutters
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              width: '100%',
+              p: '8px 12px',
+            }}
+          >
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <ToggleColorMode
+                data-screenshot="toggle-mode"
+                mode={mode}
+                toggleColorMode={toggleColorMode}
+              />
+            </Box>
+          </Toolbar>
+        </StyledAppBar>
+      ) : null}
       <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column' }}>
-        {children}
+        <Box sx={{ flex: '1 1', overflow: 'auto' }}>{children}</Box>
       </Box>
     </ThemeProvider>
   );

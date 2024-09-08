@@ -14,6 +14,10 @@ type LoginParam = {
   password: string;
 };
 
+type ResetPasswordParam = {
+  email: string;
+};
+
 async function login({ username, password }: LoginParam) {
   const requestBody = JSON.stringify({ username, password });
   const sha256hash = await hashPayload(requestBody);
@@ -53,10 +57,32 @@ async function logout() {
   }
 }
 
+async function resetPassword({ email }: ResetPasswordParam) {
+  const requestBody = JSON.stringify({ email });
+  const sha256hash = await hashPayload(requestBody);
+
+  const response = await fetch('/auth/resetPassword', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-amz-content-sha256': sha256hash,
+    },
+    body: requestBody,
+  });
+
+  if (!response.ok) {
+    switch (response.status) {
+      default:
+        throw new Error('Reset password failed.');
+    }
+  }
+}
+
 type AuthContextValue = {
   isAuthenticated: boolean;
   login: (request: LoginParam) => Promise<void>;
   logout: () => Promise<void>;
+  resetPassword: (request: ResetPasswordParam) => Promise<void>;
 };
 
 const AuthContext = createContext({} as AuthContextValue);
@@ -76,6 +102,7 @@ export const AuthContextProvider = ({ children }: PropsWithChildren) => {
           await logout();
           setAuthenticated(false);
         },
+        resetPassword: resetPassword,
       }}
     >
       {children}
