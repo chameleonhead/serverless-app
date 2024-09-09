@@ -33,12 +33,10 @@
     "react-router-dom": "^6.26.1"
   },
   "devDependencies": {
-    "@chromatic-com/storybook": "^1.9.0",
     "@eslint/js": "^9.10.0",
     "@storybook/addon-essentials": "^8.2.9",
     "@storybook/addon-interactions": "^8.2.9",
     "@storybook/addon-links": "^8.2.9",
-    "@storybook/addon-onboarding": "^8.2.9",
     "@storybook/blocks": "^8.2.9",
     "@storybook/react": "^8.2.9",
     "@storybook/react-vite": "^8.2.9",
