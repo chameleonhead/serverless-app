@@ -27,7 +27,7 @@ import {
 import assert = require("assert");
 
 const frontend_url =
-  process.env.SA_FRONTEND_URL || "https://d35bruoc0bika4.cloudfront.net/";
+  process.env.SA_FRONTEND_URL || "http://localhost:5173/";
 export default class StepImplementation {
   @BeforeSuite()
   public async beforeSuite() {
