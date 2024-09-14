@@ -5,7 +5,7 @@ import {
   Route,
   RouterProvider,
 } from 'react-router-dom';
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from 'msw';
 import SignIn from './SignIn';
 import { AuthContextProvider } from '../auth';
 
@@ -35,12 +35,12 @@ export const Default: Story = {
     msw: {
       handlers: [
         http.post('/auth/login', () => {
-          return HttpResponse.json({})
+          return HttpResponse.json({});
         }),
         http.post('/auth/logout', () => {
-          return HttpResponse.json({})
-        })
-      ]
-    }
-  }
+          return HttpResponse.json({});
+        }),
+      ],
+    },
+  },
 };

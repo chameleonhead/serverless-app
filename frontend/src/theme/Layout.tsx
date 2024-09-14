@@ -36,7 +36,9 @@ export default function TemplateFrame({
   showAppBar,
   children,
 }: TemplateFrameProps) {
-  const [mode, setMode] = useState<PaletteMode>(getDefaultMode() as PaletteMode);
+  const [mode, setMode] = useState<PaletteMode>(
+    getDefaultMode() as PaletteMode
+  );
   const defaultTheme = createTheme({ palette: { mode } });
 
   const toggleColorMode = () => {

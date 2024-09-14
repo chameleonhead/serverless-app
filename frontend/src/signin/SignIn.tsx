@@ -14,7 +14,7 @@ import MuiCard from '@mui/material/Card';
 import { styled } from '@mui/material/styles';
 import ForgotPassword from './ForgotPassword';
 import { GoogleIcon, LogoIcon } from './CustomIcons';
-import ThemedLayout from '../theme/ThemedLayout';
+import Layout from '../theme/Layout';
 import { useAuth } from '../auth';
 import { Navigate, useNavigation } from 'react-router-dom';
 
@@ -108,7 +108,7 @@ export default function SignIn() {
   }
 
   return (
-    <ThemedLayout showAppBar={false}>
+    <Layout showAppBar={false}>
       <SignInContainer direction="column" justifyContent="space-between">
         <Card variant="outlined">
           <Box sx={{ pb: 1 }}>
@@ -205,6 +205,6 @@ export default function SignIn() {
           </Box>
         </Card>
       </SignInContainer>
-    </ThemedLayout>
+    </Layout>
   );
 }
