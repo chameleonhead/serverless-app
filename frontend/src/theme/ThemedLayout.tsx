@@ -6,10 +6,10 @@ import {
   ThemeProvider,
 } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import Box from '@mui/material/Box';
 import AppBar from '@mui/material/AppBar';
+import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
-import ToggleColorMode from '../signin/ToggleColorMode';
+import ToggleColorMode from './ToggleColorMode';
 import getDefaultMode from './getDefaultMode';
 
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
@@ -36,7 +36,7 @@ export default function TemplateFrame({
   showAppBar,
   children,
 }: TemplateFrameProps) {
-  const [mode, setMode] = useState<PaletteMode>(getDefaultMode());
+  const [mode, setMode] = useState<PaletteMode>(getDefaultMode() as PaletteMode);
   const defaultTheme = createTheme({ palette: { mode } });
 
   const toggleColorMode = () => {

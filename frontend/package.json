@@ -50,6 +50,8 @@
     "eslint-plugin-react-refresh": "^0.4.11",
     "globals": "^15.9.0",
     "jsdom": "^24.1.1",
+    "msw": "^2.4.4",
+    "msw-storybook-addon": "^2.0.3",
     "prettier": "3.3.3",
     "storybook": "^8.2.9",
     "typescript": "^5.5.4",
@@ -60,6 +62,11 @@
   "eslintConfig": {
     "extends": [
       "plugin:storybook/recommended"
+    ]
+  },
+  "msw": {
+    "workerDirectory": [
+      ".storybook/public"
     ]
   }
 }

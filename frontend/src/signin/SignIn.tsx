@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react';
-import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Box from '@mui/material/Box';
 import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Divider from '@mui/material/Divider';
@@ -14,7 +14,7 @@ import MuiCard from '@mui/material/Card';
 import { styled } from '@mui/material/styles';
 import ForgotPassword from './ForgotPassword';
 import { GoogleIcon, LogoIcon } from './CustomIcons';
-import TemplateFrame from '../theme/TemplateFrame';
+import ThemedLayout from '../theme/ThemedLayout';
 import { useAuth } from '../auth';
 import { Navigate, useNavigation } from 'react-router-dom';
 
@@ -108,7 +108,7 @@ export default function SignIn() {
   }
 
   return (
-    <TemplateFrame showAppBar={false}>
+    <ThemedLayout showAppBar={false}>
       <SignInContainer direction="column" justifyContent="space-between">
         <Card variant="outlined">
           <Box sx={{ pb: 1 }}>
@@ -205,6 +205,6 @@ export default function SignIn() {
           </Box>
         </Card>
       </SignInContainer>
-    </TemplateFrame>
+    </ThemedLayout>
   );
 }

@@ -1,7 +1,5 @@
-import { PaletteMode } from '@mui/material/styles';
-
 export default function getDefaultMode() {
-  const savedMode = localStorage.getItem('themeMode') as PaletteMode | null;
+  const savedMode = localStorage.getItem('themeMode');
   if (savedMode) {
     return savedMode;
   } else {

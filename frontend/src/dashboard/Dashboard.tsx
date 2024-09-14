@@ -5,11 +5,11 @@ import AppNavbar from './components/AppNavbar';
 import Header from './components/Header';
 import MainGrid from './components/MainGrid';
 import SideMenu from './components/SideMenu';
-import TemplateFrame from '../theme/TemplateFrame';
+import ThemedLayout from '../theme/ThemedLayout';
 
 export default function Dashboard() {
   return (
-    <TemplateFrame showAppBar={true}>
+    <ThemedLayout showAppBar={true}>
       <Box sx={{ display: 'flex' }}>
         <SideMenu />
         <AppNavbar />
@@ -36,6 +36,6 @@ export default function Dashboard() {
           </Stack>
         </Box>
       </Box>
-    </TemplateFrame>
+    </ThemedLayout>
   );
 }
