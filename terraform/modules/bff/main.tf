@@ -4,6 +4,19 @@ data "aws_region" "current" {
 data "aws_caller_identity" "current" {
 }
 
+resource "aws_s3_bucket" "session_storage" {
+  bucket = "${var.env_code}-s3-session-storage-${data.aws_caller_identity.current.account_id}"
+}
+
+resource "aws_s3_bucket_public_access_block" "session_storage_pab" {
+  bucket = aws_s3_bucket.session_storage.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
 data "aws_iam_policy_document" "assume_role_lambda" {
   statement {
     effect = "Allow"
@@ -40,6 +53,19 @@ data "aws_iam_policy_document" "auth_role_policy" {
       "arn:aws:cognito-idp:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:userpool/${var.cognito_user_pool_id}"
     ]
   }
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:ListBucket",
+      "s3:AbortMultipartUpload"
+    ]
+    resources = [
+      aws_s3_bucket.session_storage.arn,
+      "${aws_s3_bucket.session_storage.arn}/*"
+    ]
+  }
 }
 
 resource "aws_iam_role_policy" "auth_role_policy" {
@@ -66,6 +92,7 @@ resource "aws_lambda_function" "auth" {
   handler          = "auth.handler"
   environment {
     variables = {
+      "S3_BUCKET"            = aws_s3_bucket.session_storage.bucket
       "USER_POOL_ID"         = var.cognito_user_pool_id
       "API_CLIENT_SECRET_ID" = "${var.env_code}/serverless-app/api-client"
     }

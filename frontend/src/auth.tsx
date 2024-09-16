@@ -1,6 +1,7 @@
-import { createContext, PropsWithChildren, useContext, useState } from 'react';
+import { createContext, PropsWithChildren, useContext, useEffect, useState } from 'react';
 
-export class LoginFailedError extends Error {}
+export class LoginFailedError extends Error { }
+export class UnauthorizedError extends Error { }
 
 const hashPayload = async (payload: string) => {
   const encoder = new TextEncoder().encode(payload);
@@ -18,7 +19,16 @@ type ResetPasswordParam = {
   email: string;
 };
 
-async function login({ username, password }: LoginParam) {
+type Tokens = {
+  id_token: string;
+  access_token: string
+}
+
+type SessionResponse = {
+  session: Tokens
+}
+
+async function login({ username, password }: LoginParam): Promise<SessionResponse> {
   const requestBody = JSON.stringify({ username, password });
   const sha256hash = await hashPayload(requestBody);
 
@@ -39,6 +49,23 @@ async function login({ username, password }: LoginParam) {
         throw new Error('Login failed.');
     }
   }
+
+  return await response.json()
+}
+
+async function session(): Promise<SessionResponse> {
+  const response = await fetch('/auth/session');
+
+  if (!response.ok) {
+    switch (response.status) {
+      case 401:
+        throw new UnauthorizedError();
+      default:
+        throw new Error('Session failed.');
+    }
+  }
+
+  return await response.json()
 }
 
 async function logout() {
@@ -81,6 +108,7 @@ async function resetPassword({ email }: ResetPasswordParam) {
 type AuthContextValue = {
   isAuthenticated: boolean;
   login: (request: LoginParam) => Promise<void>;
+  session: () => Promise<void>;
   logout: () => Promise<void>;
   resetPassword: (request: ResetPasswordParam) => Promise<void>;
 };
@@ -88,24 +116,39 @@ type AuthContextValue = {
 const AuthContext = createContext({} as AuthContextValue);
 
 export const AuthContextProvider = ({ children }: PropsWithChildren) => {
-  const [isAuthenticated, setAuthenticated] = useState<boolean>(false);
+  const [sessionResponse, setSessionResponse] = useState<SessionResponse | null>(null)
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (loading) {
+      session().then((session) => {
+        setSessionResponse(session)
+      }).finally(() => {
+        setLoading(false)
+      })
+    }
+  }, [loading])
 
   return (
     <AuthContext.Provider
       value={{
-        isAuthenticated,
+        isAuthenticated: !!sessionResponse,
         login: async (req) => {
-          await login(req);
-          setAuthenticated(true);
+          const response = await login(req);
+          setSessionResponse(response);
+        },
+        session: async () => {
+          const response = await session();
+          setSessionResponse(response)
         },
         logout: async () => {
           await logout();
-          setAuthenticated(false);
+          setSessionResponse(null);
         },
         resetPassword: resetPassword,
       }}
     >
-      {children}
+      {loading ? null : children}
     </AuthContext.Provider>
   );
 };

@@ -1,23 +1,22 @@
+import http.cookies
 import json
 import os
+import sys
 import unittest
 import unittest.mock
 
 import boto3
 import moto
 
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 import auth
 
 
 class TestHandler(unittest.TestCase):
-    @moto.mock_aws
-    def test_handler_login(self):
-        cognito_idp = boto3.client("cognito-idp")
-        secretsmanager = boto3.client("secretsmanager")
-        create_user_pool_response = cognito_idp.create_user_pool(
-            PoolName="dev-user-pool"
-        )
-        user_pool = create_user_pool_response["UserPool"]
+    def setup_cognito(self, cognito_idp, secretsmanager):
+        user_pool = cognito_idp.create_user_pool(
+            PoolName="dev-user-pool",
+        )["UserPool"]
         cognito_idp.admin_create_user(
             UserPoolId=user_pool["Id"],
             Username="admin@example.com",
@@ -32,12 +31,11 @@ class TestHandler(unittest.TestCase):
             Password="P@ssw0rd",
             Permanent=True,
         )
-        create_user_pool_client_response = cognito_idp.create_user_pool_client(
+        user_pool_client = cognito_idp.create_user_pool_client(
             UserPoolId=user_pool["Id"],
             ClientName="dev-user-pool-client",
             GenerateSecret=True,
-        )
-        user_pool_client = create_user_pool_client_response["UserPoolClient"]
+        )["UserPoolClient"]
         secretsmanager.create_secret(
             Name="dev/serverless-app/api-client",
             SecretString=json.dumps(
@@ -47,25 +45,39 @@ class TestHandler(unittest.TestCase):
                 }
             ),
         )
+        return user_pool["Id"]
+
+    @moto.mock_aws
+    @unittest.mock.patch.dict(
+        os.environ,
+        {"AWS_DEFAULT_REGION": "ap-northeast-1"},
+    )
+    def test_handler_login(self):
+        s3 = boto3.client("s3", region_name="us-east-1")
+        s3.create_bucket(Bucket="dev-s3-session-storage")
+        cognito_idp = boto3.client("cognito-idp")
+        secretsmanager = boto3.client("secretsmanager")
+        user_pool_id = self.setup_cognito(cognito_idp, secretsmanager)
 
         with unittest.mock.patch.dict(
             os.environ,
             {
-                "USER_POOL_ID": user_pool["Id"],
+                "S3_BUCKET": "dev-s3-session-storage",
+                "USER_POOL_ID": user_pool_id,
                 "API_CLIENT_SECRET_ID": "dev/serverless-app/api-client",
             },
         ):
             result = auth.handler(
                 {
-                    "rawPath": "/auth/auth/login",
+                    "rawPath": "/auth/login",
                     "rawQueryString": "",
                     "headers": {
                         "host": "example.com",
                     },
                     "requestContext": {
                         "http": {
-                            "method": "GET",
-                            "path": "/auth/auth/login",
+                            "method": "POST",
+                            "path": "/auth/login",
                         },
                         "requestId": "be4172b1-0ea4-4121-88db-08960adb054f",
                         "timeEpoch": 1725703735416,
@@ -81,8 +93,82 @@ class TestHandler(unittest.TestCase):
                 None,
             )
         self.assertEqual(200, result["statusCode"])
-        self.assertIsNotNone(json.loads(result["body"])["id_token"])
-        self.assertIsNotNone(json.loads(result["body"])["access_token"])
+        res_body = json.loads(result["body"])
+        self.assertIsNotNone(res_body["session"]["id_token"])
+        self.assertIsNotNone(res_body["session"]["access_token"])
+
+    @moto.mock_aws
+    @unittest.mock.patch.dict(
+        os.environ,
+        {"AWS_DEFAULT_REGION": "ap-northeast-1"},
+    )
+    def test_handler_session(self):
+        s3 = boto3.client("s3", region_name="us-east-1")
+        s3.create_bucket(Bucket="dev-s3-session-storage")
+        cognito_idp = boto3.client("cognito-idp")
+        secretsmanager = boto3.client("secretsmanager")
+        user_pool_id = self.setup_cognito(cognito_idp, secretsmanager)
+
+        with unittest.mock.patch.dict(
+            os.environ,
+            {
+                "S3_BUCKET": "dev-s3-session-storage",
+                "USER_POOL_ID": user_pool_id,
+                "API_CLIENT_SECRET_ID": "dev/serverless-app/api-client",
+            },
+        ):
+            login_result = auth.handler(
+                {
+                    "rawPath": "/auth/login",
+                    "rawQueryString": "",
+                    "headers": {
+                        "host": "example.com",
+                    },
+                    "requestContext": {
+                        "http": {
+                            "method": "POST",
+                            "path": "/auth/login",
+                        },
+                        "requestId": "be4172b1-0ea4-4121-88db-08960adb054f",
+                        "timeEpoch": 1725703735416,
+                    },
+                    "body": json.dumps(
+                        {
+                            "username": "admin@example.com",
+                            "password": "P@ssw0rd",
+                        }
+                    ),
+                    "isBase64Encoded": False,
+                },
+                None,
+            )
+            cookies = http.cookies.SimpleCookie(
+                login_result["headers"]["Set-Cookie"],
+            )
+            result = auth.handler(
+                {
+                    "rawPath": "/auth/session",
+                    "rawQueryString": "",
+                    "headers": {
+                        "host": "example.com",
+                        "cookie": cookies.output(header="", sep=";").strip(),
+                    },
+                    "requestContext": {
+                        "http": {
+                            "method": "GET",
+                            "path": "/auth/session",
+                        },
+                        "requestId": "be4172b1-0ea4-4121-88db-08960adb054f",
+                        "timeEpoch": 1725703735416,
+                    },
+                    "isBase64Encoded": False,
+                },
+                None,
+            )
+        self.assertEqual(200, result["statusCode"])
+        res_body = json.loads(result["body"])
+        self.assertIsNotNone(res_body["session"]["id_token"])
+        self.assertIsNotNone(res_body["session"]["access_token"])
 
 
 if __name__ == "__main__":

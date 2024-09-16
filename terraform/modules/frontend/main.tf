@@ -70,7 +70,6 @@ resource "aws_cloudfront_distribution" "frontend" {
     origin_id                = "origin-auth"
     domain_name              = var.bff_auth_url_domain_name
     origin_access_control_id = aws_cloudfront_origin_access_control.lambda.id
-    origin_path              = "/auth"
 
     custom_origin_config {
       http_port              = 80
