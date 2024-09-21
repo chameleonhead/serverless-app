@@ -1,4 +1,3 @@
-import { ReactNode } from 'react';
 import { styled } from '@mui/material/styles';
 import MuiAppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
@@ -21,11 +20,7 @@ const StyledAppBar = styled(MuiAppBar)(({ theme }) => ({
   flex: '0 0 auto',
 }));
 
-interface AppBarProps {
-  children: ReactNode;
-}
-
-export default function AppBar({}: AppBarProps) {
+export default function AppBar() {
   const { mode, changeColorMode } = useColorMode();
 
   const toggleColorMode = () => {
