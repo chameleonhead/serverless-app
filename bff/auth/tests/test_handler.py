@@ -1,14 +1,12 @@
 import http.cookies
 import json
 import os
-import sys
 import unittest
 import unittest.mock
 
 import boto3
 import moto
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 import auth
 
 
