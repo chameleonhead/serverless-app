@@ -1,12 +1,9 @@
 import { Step, Table, BeforeSuite, AfterSuite, TableRow } from "gauge-ts";
-import { strictEqual } from "assert";
 import {
   $,
-  above,
   accept,
   below,
   button,
-  checkBox,
   click,
   closeBrowser,
   confirm,
@@ -16,11 +13,8 @@ import {
   into,
   link,
   openBrowser,
-  press,
-  screenshot,
   text,
   textBox,
-  toLeftOf,
   within,
   write,
 } from "taiko";
@@ -28,10 +22,11 @@ import assert = require("assert");
 
 const frontend_url =
   process.env.SA_FRONTEND_URL || "http://localhost:5173/";
+const headless = !(process.env.SA_HEADLESS?.toLowerCase() === 'false' || false);
 export default class StepImplementation {
   @BeforeSuite()
   public async beforeSuite() {
-    await openBrowser({ headless: true });
+    await openBrowser({ headless });
   }
 
   @AfterSuite()
@@ -46,6 +41,9 @@ export default class StepImplementation {
 
   @Step("ユーザー <username> でログインする")
   public async login(username: string) {
+    if (await text("React Router Contacts").exists()) {
+      return;
+    }
     await write(username, into(textBox("メールアドレス")));
     await write("P@ssw0rd", into(textBox("パスワード")));
     await click(button("ログイン"));
@@ -53,7 +51,9 @@ export default class StepImplementation {
 
   @Step("初期ページが表示される")
   public async checkFirstPage() {
-    await text("React Router Contacts").exists(0, 3000);
+    assert.ok(await text("React Router Contacts").exists());
+    assert.ok(await $("#sidebar").exists());
+    assert.ok(await $("#detail").exists());
   }
 
   @Step("新規に連絡先を追加する")
@@ -63,7 +63,7 @@ export default class StepImplementation {
 
   @Step("<contactName> という連絡先がサイドバーに表示される")
   public async checkContactNameLinkInSideBar(contactName: string) {
-    assert.ok(await link(contactName, within($("#sidebar"))).exists(0, 3000));
+    assert.ok(await link(contactName, within($("#sidebar"))).exists());
   }
 
   @Step("サイドバーから <contactName> という連絡先を選択する")
@@ -74,10 +74,10 @@ export default class StepImplementation {
   @Step("<contactName> という連絡先の詳細画面が表示される")
   public async checkDisplayContactDetail(contactName: string) {
     assert.ok(
-      await text(new RegExp(contactName), within($("#detail"))).exists(0, 3000)
+      await text(new RegExp(contactName), within($("#detail"))).exists()
     );
-    assert.ok(await button("Edit", within($("#detail"))).exists(0, 3000));
-    assert.ok(await button("Delete", within($("#detail"))).exists(0, 3000));
+    assert.ok(await button("Edit", within($("#detail"))).exists());
+    assert.ok(await button("Delete", within($("#detail"))).exists());
   }
 
   @Step("詳細画面で編集ボタンを押下する")
@@ -87,11 +87,11 @@ export default class StepImplementation {
 
   @Step("すべて空欄の編集画面が表示される")
   public async checkDisplayEditScreen() {
-    await textBox({ placeholder: "First", value: "" }).exists(0, 3000);
-    await textBox({ placeholder: "Last", value: "" }).exists(0, 3000);
-    await textBox("Twitter").exists(0, 3000);
-    await textBox("Avatar URL").exists(0, 3000);
-    await textBox("Notes").exists(0, 3000);
+    await textBox({ placeholder: "First", value: "" }).exists();
+    await textBox({ placeholder: "Last", value: "" }).exists();
+    await textBox("Twitter").exists();
+    await textBox("Avatar URL").exists();
+    await textBox("Notes").exists();
   }
 
   @Step(
@@ -120,22 +120,22 @@ export default class StepImplementation {
     avatarUrl: string,
     notes: string
   ) {
-    assert.ok(await text(twitter, within($("#detail"))).exists(0, 3000));
+    assert.ok(await text(twitter, within($("#detail"))).exists());
     assert.ok(
-      await image({ src: avatarUrl }, within($("#detail"))).exists(0, 3000)
+      await image({ src: avatarUrl }, within($("#detail"))).exists()
     );
-    assert.ok(await text(notes, within($("#detail"))).exists(0, 3000));
+    assert.ok(await text(notes, within($("#detail"))).exists());
   }
 
   @Step("以下の連絡先を追加する <table>")
   public async addContacts(table: Table) {
     for (var row of table.getTableRows()) {
       await click(button("New", within($("#sidebar"))));
-      await link("No Name", within($("#sidebar"))).exists(0, 3000);
+      await link("No Name", within($("#sidebar"))).exists();
       await click(link("No Name", within($("#sidebar"))));
-      await text("No Name", within($("#detail"))).exists(0, 3000);
+      await text("No Name", within($("#detail"))).exists();
       await click(button("Edit", within($("#detail"))));
-      await textBox({ placeholder: "First", value: "" }).exists(0, 3000);
+      await textBox({ placeholder: "First", value: "" }).exists();
       await write(
         row.getCell("First"),
         into(textBox({ placeholder: "First" }))
@@ -146,7 +146,7 @@ export default class StepImplementation {
       await link(
         `${row.getCell("First")} ${row.getCell("Last")}`,
         within($("#sidebar"))
-      ).exists(0, 3000);
+      ).exists();
     }
   }
 
@@ -158,7 +158,7 @@ export default class StepImplementation {
       if (before) {
         places.push(below(text(before["Name"], within($("#sidebar")))));
       }
-      await link(row.getCell("Name"), ...places).exists(0, 3000);
+      await link(row.getCell("Name"), ...places).exists();
     }
   }
 
@@ -170,7 +170,7 @@ export default class StepImplementation {
   @Step("<contactName> を削除する")
   public async deleteContact(contactName: string) {
     await click(link(contactName, within($("#sidebar"))));
-    await text(contactName, within($("#detail"))).exists(0, 3000);
+    await text(contactName, within($("#detail"))).exists();
     confirm(
       "Please confirm you want to delete this record.",
       async () => await accept()

@@ -2,7 +2,8 @@
   "name": "gauge-ts-template",
   "description": "Starter template for writing TypeScript tests for Gauge",
   "scripts": {
-    "test": "gauge run specs/"
+    "test": "gauge run specs/",
+    "shell": "taiko"
   },
   "dependencies": {
     "@getgauge/cli": "^1.6.8",

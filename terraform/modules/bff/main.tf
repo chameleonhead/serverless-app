@@ -90,6 +90,7 @@ resource "aws_lambda_function" "auth" {
   source_code_hash = data.local_file.auth_zip.content_md5
   runtime          = "python3.11"
   handler          = "auth.handler"
+  timeout          = 59
   environment {
     variables = {
       "S3_BUCKET"            = aws_s3_bucket.session_storage.bucket
