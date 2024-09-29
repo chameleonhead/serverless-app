@@ -17,6 +17,8 @@ import { GoogleIcon, LogoIcon } from './CustomIcons';
 import Layout from '../components/Layout';
 import { useAuth } from '../auth';
 import { Navigate, useNavigation } from 'react-router-dom';
+import { useColorMode } from '../theme/ColorModeProvider';
+import ToggleColorMode from '../theme/ToggleColorMode';
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -57,6 +59,7 @@ export default function SignIn() {
   const [passwordErrorMessage, setPasswordErrorMessage] = useState('');
   const [open, setOpen] = useState(false);
   const { isAuthenticated, login } = useAuth();
+  const { mode, changeColorMode } = useColorMode();
   const navigation = useNavigation();
 
   const handleClickOpen = () => {
@@ -108,11 +111,24 @@ export default function SignIn() {
   }
 
   return (
-    <Layout showAppBar={false}>
+    <Layout>
       <SignInContainer direction="column" justifyContent="space-between">
         <Card variant="outlined">
-          <Box sx={{ pb: 1 }}>
+          <Box
+            sx={{
+              pb: 1,
+              display: 'flex',
+              justifyContent: 'space-between',
+              justifyItems: 'flex-start',
+            }}
+          >
             <LogoIcon />
+            <ToggleColorMode
+              mode={mode}
+              toggleColorMode={() =>
+                changeColorMode(mode == 'dark' ? 'light' : 'dark')
+              }
+            />
           </Box>
           <Typography
             component="h1"

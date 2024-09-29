@@ -37,7 +37,6 @@ export default function SideMenu() {
       <Box
         sx={{
           display: 'flex',
-          mt: '60px',
           p: 1.5,
         }}
       >

@@ -17,7 +17,7 @@ const ColorModeContext = createContext({} as ColorModeValue);
 // eslint-disable-next-line react-refresh/only-export-components
 export const useColorMode = () => useContext(ColorModeContext);
 
-export default function ThemeProvider({
+export default function ColorModeProvider({
   children,
 }: PropsWithChildren<{ mode?: PaletteMode }>) {
   const [mode, setMode] = useState<PaletteMode>(

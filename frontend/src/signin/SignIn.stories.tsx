@@ -10,12 +10,15 @@ import SignIn from './SignIn';
 import { AuthContextProvider, useAuth } from '../auth';
 import Guard from '../routes/guard';
 import Button from '@mui/material/Button';
+import Layout from '../components/Layout';
 
 function LggedIn() {
-  const { logout } = useAuth()
+  const { logout } = useAuth();
   return (
-    <Button onClick={logout}>Logout</Button>
-  )
+    <Layout>
+      <Button onClick={logout}>Logout</Button>
+    </Layout>
+  );
 }
 
 const meta = {
@@ -24,7 +27,7 @@ const meta = {
     layout: 'fullscreen',
   },
   decorators: [
-    (story: any) => (
+    (story) => (
       <AuthContextProvider>
         <RouterProvider
           router={createMemoryRouter(
@@ -34,7 +37,8 @@ const meta = {
                   <Route path="*" element={<LggedIn />} />
                 </Route>
                 <Route path="/login" element={story()} />
-              </Route>)
+              </Route>
+            )
           )}
         />
       </AuthContextProvider>
@@ -59,7 +63,6 @@ export const Default: Story = {
     },
   },
 };
-
 
 export const SignedIn: Story = {
   parameters: {

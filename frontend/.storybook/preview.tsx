@@ -1,5 +1,6 @@
 import type { Preview } from '@storybook/react';
 import { initialize, mswLoader } from 'msw-storybook-addon';
+import ColorModeProvider from '../src/theme/ColorModeProvider';
 
 const preview: Preview = {
   beforeAll: () => {
@@ -14,6 +15,7 @@ const preview: Preview = {
     },
   },
   loaders: [mswLoader],
+  decorators: [(story) => <ColorModeProvider>{story()} </ColorModeProvider>],
 };
 
 export default preview;

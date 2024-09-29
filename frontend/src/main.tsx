@@ -21,7 +21,7 @@ import ErrorPage from './error-page';
 import { AuthContextProvider } from './auth';
 import Login from './routes/login';
 import Guard from './routes/guard';
-import ThemeProvider from './theme/ThemeProvider';
+import ColorModeProvider from './theme/ColorModeProvider';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -58,10 +58,10 @@ const router = createBrowserRouter(
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ThemeProvider>
+    <ColorModeProvider>
       <AuthContextProvider>
         <RouterProvider router={router} />
       </AuthContextProvider>
-    </ThemeProvider>
+    </ColorModeProvider>
   </StrictMode>
 );

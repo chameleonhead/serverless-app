@@ -9,7 +9,7 @@ import Layout from '../components/Layout';
 
 export default function Dashboard() {
   return (
-    <Layout showAppBar={true}>
+    <Layout>
       <Box sx={{ display: 'flex' }}>
         <SideMenu />
         <AppNavbar />
