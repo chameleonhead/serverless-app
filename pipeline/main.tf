@@ -75,6 +75,33 @@ resource "aws_codebuild_project" "serverless_app_build" {
     type                        = "LINUX_CONTAINER"
     image_pull_credentials_type = "CODEBUILD"
     privileged_mode             = "true"
+  }
+
+  source {
+    type      = "CODEPIPELINE"
+    buildspec = "buildspec-build.yml"
+  }
+
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  cache {
+    type     = "S3"
+    location = "${aws_s3_bucket.cache_bucket.bucket}/serverless-app-build"
+  }
+}
+
+resource "aws_codebuild_project" "serverless_app_test" {
+  name         = "${var.env_code}-serverless-app-test"
+  service_role = aws_iam_role.codebuild_role.arn
+
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = "aws/codebuild/amazonlinux2-x86_64-standard:5.0"
+    type                        = "LINUX_CONTAINER"
+    image_pull_credentials_type = "CODEBUILD"
+    privileged_mode             = "true"
 
     environment_variable {
       name  = "S3_BUCKET_TFSTATE"
@@ -88,7 +115,8 @@ resource "aws_codebuild_project" "serverless_app_build" {
   }
 
   source {
-    type = "CODEPIPELINE"
+    type      = "CODEPIPELINE"
+    buildspec = "buildspec-test.yml"
   }
 
   artifacts {
@@ -97,7 +125,7 @@ resource "aws_codebuild_project" "serverless_app_build" {
 
   cache {
     type     = "S3"
-    location = "${aws_s3_bucket.cache_bucket.bucket}/serverless-app"
+    location = "${aws_s3_bucket.cache_bucket.bucket}/serverless-app-test"
   }
 }
 
@@ -146,7 +174,24 @@ resource "aws_codepipeline" "pipeline" {
       version          = "1"
 
       configuration = {
-        ProjectName = "${var.env_code}-serverless-app-build"
+        ProjectName = aws_codebuild_project.serverless_app_build.name
+      }
+    }
+  }
+
+  stage {
+    name = "Test"
+
+    action {
+      name            = "Test"
+      category        = "Test"
+      owner           = "AWS"
+      provider        = "CodeBuild"
+      input_artifacts = ["build_output"]
+      version         = "1"
+
+      configuration = {
+        ProjectName = aws_codebuild_project.serverless_app_test.name
       }
     }
   }

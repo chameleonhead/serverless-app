@@ -4,7 +4,6 @@ phases:
   install:
     on-failure: ABORT
     runtime-versions:
-      python: "3.11"
       nodejs: "20"
     commands:
       - export PATH=$HOME/.local/bin:$PATH
@@ -43,10 +42,6 @@ reports:
     files:
       - gauge/reports/xml-report/result.xml
     file-format: JUNITXML
-
-artifacts:
-  files:
-    - "**/*"
 
 cache:
   paths:
