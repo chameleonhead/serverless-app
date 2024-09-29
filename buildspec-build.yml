@@ -1,0 +1,49 @@
+version: 0.2
+
+phases:
+  install:
+    on-failure: ABORT
+    runtime-versions:
+      python: "3.11"
+      nodejs: "20"
+    commands:
+      - export PATH=$HOME/.local/bin:$PATH
+      - |
+        [ -n "$(which poetry)" ] || \
+        (curl -sSL https://install.python-poetry.org | python3 - && poetry self add poetry-plugin-lambda-build)
+  pre_build:
+    on-failure: ABORT
+    commands:
+      - cd ${CODEBUILD_SRC_DIR}/frontend && npm install --no-progress
+      - cd ${CODEBUILD_SRC_DIR}/bff/auth && poetry install
+      - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry install
+  build:
+    on-failure: ABORT
+    commands:
+      - cd ${CODEBUILD_SRC_DIR} && bash scripts/check.sh
+      - cd ${CODEBUILD_SRC_DIR} && bash scripts/build.sh
+  post_build:
+    on-failure: ABORT
+    commands:
+      - echo "Post build"
+
+reports:
+  python-unit-tests:
+    files:
+      - bff/auth/unittests.xml
+      - api/hello/unittests.xml
+    file-format: JUNITXML
+  python-coverage-tests:
+    files:
+      - bff/auth/coverage.xml
+      - api/hello/coverage.xml
+    file-format: COBERTURAXML
+
+artifacts:
+  files:
+    - "**/*"
+
+cache:
+  paths:
+    - /root/.local/**/*
+    - /root/.cache/pip/**/*

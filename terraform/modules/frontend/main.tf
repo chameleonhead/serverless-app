@@ -151,15 +151,9 @@ locals {
   }
 }
 
-data "external" "frontend_dist" {
-  program     = ["bash", "./build.sh"]
-  working_dir = "${path.module}/../../../frontend"
-}
-
 data "local_file" "dist" {
-  depends_on = [data.external.frontend_dist]
-  for_each   = toset([for s in fileset("${path.module}/../../../frontend/dist", "**") : s])
-  filename   = "${path.module}/../../../frontend/dist/${each.value}"
+  for_each = toset([for s in fileset("${path.module}/../../../frontend/dist", "**") : s])
+  filename = "${path.module}/../../../frontend/dist/${each.value}"
 }
 
 resource "aws_s3_object" "dist" {
