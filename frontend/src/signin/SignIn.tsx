@@ -14,7 +14,7 @@ import MuiCard from '@mui/material/Card';
 import { styled } from '@mui/material/styles';
 import ForgotPassword from './ForgotPassword';
 import { GoogleIcon, LogoIcon } from './CustomIcons';
-import Layout from '../theme/Layout';
+import Layout from '../components/Layout';
 import { useAuth } from '../auth';
 import { Navigate, useNavigation } from 'react-router-dom';
 

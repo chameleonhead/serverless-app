@@ -9,8 +9,8 @@ import CssBaseline from '@mui/material/CssBaseline';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
-import ToggleColorMode from './ToggleColorMode';
-import getDefaultMode from './getDefaultMode';
+import ToggleColorMode from '../theme/ToggleColorMode';
+import getDefaultMode from '../theme/getDefaultMode';
 
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
   position: 'relative',

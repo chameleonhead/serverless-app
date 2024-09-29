@@ -7,7 +7,16 @@ import {
 } from 'react-router-dom';
 import { http, HttpResponse } from 'msw';
 import SignIn from './SignIn';
-import { AuthContextProvider } from '../auth';
+import { AuthContextProvider, useAuth } from '../auth';
+import Guard from '../routes/guard';
+import Button from '@mui/material/Button';
+
+function LggedIn() {
+  const { logout } = useAuth()
+  return (
+    <Button onClick={logout}>Logout</Button>
+  )
+}
 
 const meta = {
   component: SignIn,
@@ -15,11 +24,17 @@ const meta = {
     layout: 'fullscreen',
   },
   decorators: [
-    (story) => (
+    (story: any) => (
       <AuthContextProvider>
         <RouterProvider
           router={createMemoryRouter(
-            createRoutesFromElements(<Route path="/" element={story()} />)
+            createRoutesFromElements(
+              <Route>
+                <Route element={<Guard />}>
+                  <Route path="*" element={<LggedIn />} />
+                </Route>
+                <Route path="/login" element={story()} />
+              </Route>)
           )}
         />
       </AuthContextProvider>
@@ -35,6 +50,25 @@ export const Default: Story = {
     msw: {
       handlers: [
         http.post('/auth/login', () => {
+          return HttpResponse.json({});
+        }),
+        http.post('/auth/logout', () => {
+          return HttpResponse.json({});
+        }),
+      ],
+    },
+  },
+};
+
+
+export const SignedIn: Story = {
+  parameters: {
+    msw: {
+      handlers: [
+        http.post('/auth/login', () => {
+          return HttpResponse.json({});
+        }),
+        http.get('/auth/session', () => {
           return HttpResponse.json({});
         }),
         http.post('/auth/logout', () => {
