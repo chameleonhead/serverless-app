@@ -1,13 +1,7 @@
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
-import Checkbox from '@mui/material/Checkbox';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import Divider from '@mui/material/Divider';
-import FormLabel from '@mui/material/FormLabel';
-import FormControl from '@mui/material/FormControl';
-import Link from '@mui/material/Link';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import MuiCard from '@mui/material/Card';
@@ -19,6 +13,7 @@ import { useAuth } from '../auth';
 import { Navigate, useNavigation } from 'react-router-dom';
 import { useColorMode } from '../theme/ColorModeProvider';
 import ToggleColorMode from '../theme/ToggleColorMode';
+import LoginForm, { LoginFormValue } from '../components/LoginForm';
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -53,10 +48,6 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
 }));
 
 export default function SignIn() {
-  const [emailError, setEmailError] = useState(false);
-  const [emailErrorMessage, setEmailErrorMessage] = useState('');
-  const [passwordError, setPasswordError] = useState(false);
-  const [passwordErrorMessage, setPasswordErrorMessage] = useState('');
   const [open, setOpen] = useState(false);
   const { isAuthenticated, login } = useAuth();
   const { mode, changeColorMode } = useColorMode();
@@ -70,40 +61,8 @@ export default function SignIn() {
     setOpen(false);
   };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    await login({
-      username: data.get('email') as string,
-      password: data.get('password') as string,
-    });
-  };
-
-  const validateInputs = () => {
-    const email = document.getElementById('email') as HTMLInputElement;
-    const password = document.getElementById('password') as HTMLInputElement;
-
-    let isValid = true;
-
-    if (!email.value || !/\S+@\S+/.test(email.value)) {
-      setEmailError(true);
-      setEmailErrorMessage('メールアドレスを入力してください。');
-      isValid = false;
-    } else {
-      setEmailError(false);
-      setEmailErrorMessage('');
-    }
-
-    if (!password.value) {
-      setPasswordError(true);
-      setPasswordErrorMessage('パスワードを入力して下さい。');
-      isValid = false;
-    } else {
-      setPasswordError(false);
-      setPasswordErrorMessage('');
-    }
-
-    return isValid;
+  const handleSubmit = async (value: LoginFormValue) => {
+    await login(value);
   };
 
   if (isAuthenticated) {
@@ -137,76 +96,11 @@ export default function SignIn() {
           >
             ログイン
           </Typography>
-          <Box
-            component="form"
+          <LoginForm
             onSubmit={handleSubmit}
-            noValidate
-            sx={(theme) => ({
-              display: 'flex',
-              flexDirection: 'column',
-              width: '100%',
-              gap: theme.spacing(2),
-            })}
-          >
-            <FormControl>
-              <FormLabel htmlFor="email">メールアドレス</FormLabel>
-              <TextField
-                error={emailError}
-                helperText={emailErrorMessage}
-                id="email"
-                type="email"
-                name="email"
-                placeholder="your@email.com"
-                autoComplete="email"
-                autoFocus
-                required
-                fullWidth
-                variant="outlined"
-                color={emailError ? 'error' : 'primary'}
-                sx={{ ariaLabel: 'email' }}
-              />
-            </FormControl>
-            <FormControl>
-              <FormLabel htmlFor="password">パスワード</FormLabel>
-              <TextField
-                error={passwordError}
-                helperText={passwordErrorMessage}
-                name="password"
-                placeholder="••••••"
-                type="password"
-                id="password"
-                autoComplete="current-password"
-                autoFocus
-                required
-                fullWidth
-                variant="outlined"
-                color={passwordError ? 'error' : 'primary'}
-              />
-            </FormControl>
-            <FormControlLabel
-              control={<Checkbox value="remember" color="primary" />}
-              label="ログイン状態を記録する"
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              onClick={validateInputs}
-            >
-              ログイン
-            </Button>
-            <Link
-              component="button"
-              type="button"
-              onClick={handleClickOpen}
-              variant="body2"
-              sx={{ alignSelf: 'baseline' }}
-              tabIndex={-1}
-            >
-              パスワードをお忘れですか？
-            </Link>
-          </Box>
-          <ForgotPassword open={open} handleClose={handleClose} />
+            onForgotPasswordClick={handleClickOpen}
+          />
+          <ForgotPassword open={open} onClose={handleClose} />
           <Divider>or</Divider>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Button
