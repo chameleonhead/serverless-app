@@ -6,7 +6,7 @@ import {
   RouterProvider,
 } from 'react-router-dom';
 import { http, HttpResponse } from 'msw';
-import SignIn from './SignIn';
+import Login from './Login';
 import { AuthContextProvider, useAuth } from '../auth';
 import Guard from '../routes/guard';
 import Button from '@mui/material/Button';
@@ -22,7 +22,7 @@ function LggedIn() {
 }
 
 const meta = {
-  component: SignIn,
+  component: Login,
   parameters: {
     layout: 'fullscreen',
   },
@@ -44,7 +44,7 @@ const meta = {
       </AuthContextProvider>
     ),
   ],
-} satisfies Meta<typeof SignIn>;
+} satisfies Meta<typeof Login>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -64,7 +64,7 @@ export const Default: Story = {
   },
 };
 
-export const SignedIn: Story = {
+export const LoggedIn: Story = {
   parameters: {
     msw: {
       handlers: [

@@ -1,5 +1,3 @@
-import SignIn from '../signin/SignIn';
+import Login from '../login/Login';
 
-export default function Login() {
-  return <SignIn />;
-}
+export default Login;
