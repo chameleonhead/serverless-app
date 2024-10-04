@@ -7,11 +7,11 @@ import json
 import logging
 import os
 import urllib.parse
-import uuid
 
 import boto3
 import botocore
 import botocore.exceptions
+import requests
 from jose import jwt
 
 logger = logging.getLogger(__name__)
@@ -66,7 +66,7 @@ def handler_login(event, context):
         client_secret = secret_value["client_secret"]
         redirect_uri = secret_value["redirect_uri"]
 
-        request_id = str(uuid.uuid4())
+        request_id = event.get("requestContext").get("requestId")
         redirect_url = query_params.get("redirect_url")
 
         s3.put_object(
@@ -193,8 +193,100 @@ def handler_login(event, context):
 
 
 def handler_callback(event, context):
-    print(event)
-    pass
+    # Cognitoの認証コードをクエリパラメータから取得
+    query_string_parameters = event.get("queryStringParameters", {})
+    code = query_string_parameters.get("code")
+    if not code:
+        return {
+            "statusCode": 400,
+            "headers": set_security_headers({}),
+            "body": "Bad Request",
+        }
+
+    s3_bucket = os.getenv("S3_BUCKET")
+    cognito_user_pool_domain = os.getenv("COGNITO_USER_POOL_DOMAIN")
+    api_client_secret_id = os.getenv("API_CLIENT_SECRET_ID")
+
+    s3 = boto3.client("s3")
+    state = query_string_parameters.get("state")
+    state = json.loads(base64.b64decode(state))
+    request_id = state["request_id"]
+    state_result = s3.get_object(
+        Bucket=s3_bucket,
+        Key=f"oauth2/{request_id}/state.json",
+    )
+    return_uri = json.loads(state_result["Body"].read())["redirect_url"]
+
+    secretsmanager = boto3.client("secretsmanager")
+
+    secret_response = secretsmanager.get_secret_value(
+        SecretId=api_client_secret_id,
+    )
+
+    secret_value = json.loads(secret_response["SecretString"])
+    client_id = secret_value["client_id"]
+    client_secret = secret_value["client_secret"]
+    redirect_uri = secret_value["redirect_uri"]
+
+    # Cognitoにトークンを要求
+    headers = {"Content-type": "application/x-www-form-urlencoded"}
+    body = {
+        "grant_type": "authorization_code",
+        "code": code,
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
+    }
+
+    response = requests.post(
+        f"https://{cognito_user_pool_domain}/oauth2/token",
+        data=body,
+        headers=headers,
+        auth=(client_id, client_secret),
+    )
+    if response.status_code == 200:
+        # トークンの取得に成功した場合
+        result = response.json()
+        id_token = result["id_token"]
+        access_token = result["access_token"]
+        refresh_token = result["refresh_token"]
+        expires_in = result["expires_in"]
+        claims = jwt.get_unverified_claims(id_token)
+        session_id = hashlib.sha256(refresh_token.encode("utf-8")).hexdigest()
+        logger.info(
+            "User %s logged in (session id: %s)",
+            claims["sub"],
+            session_id,
+        )
+        s3.put_object(
+            Bucket=s3_bucket,
+            Key=f"sessions/{session_id}/tokens.json",
+            Body=json.dumps(
+                {
+                    "id_token": id_token,
+                    "access_token": access_token,
+                    "refresh_token": refresh_token,
+                    "expiration": (
+                        datetime.datetime.now(datetime.timezone.utc)
+                        + datetime.timedelta(seconds=expires_in)
+                    ).isoformat(),
+                }
+            ).encode("utf-8"),
+        )
+
+        set_cookie = f"session_id={session_id}"
+        return {
+            "statusCode": 302,
+            "headers": {
+                "Set-Cookie": set_cookie,
+                "Location": return_uri if return_uri else "/",
+            },
+        }
+    else:
+        # トークンの取得に失敗した場合
+        return {
+            "statusCode": response.status_code,
+            "body": response.text,
+        }
 
 
 def handler_session(event, context):
@@ -308,3 +400,24 @@ def handler_session(event, context):
     except Exception as e:
         print(e)
         return {"statusCode": 401}
+
+
+def set_security_headers(headers):
+    headers.update(
+        {
+            "X-Content-Type-Options": "nosniff",
+            "X-Frame-Options": "DENY",
+            "Content-Security-Policy": (
+                "default-src *;"
+                + "script-src * 'unsafe-inline';"
+                + "connect-src * 'unsafe-inline';"
+                + "img-src * data: blob: 'unsafe-inline';"
+                + "frame-src *;"
+                + "style-src * 'unsafe-inline';"
+            ),
+            "Strict-Transport-Security": (
+                "max-age=63072000;" + "includeSubDomains;" + "preload"
+            ),
+        }
+    )
+    return headers
