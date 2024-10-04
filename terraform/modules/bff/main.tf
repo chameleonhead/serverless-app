@@ -59,7 +59,8 @@ data "aws_iam_policy_document" "auth_role_policy" {
       "s3:GetObject",
       "s3:PutObject",
       "s3:ListBucket",
-      "s3:AbortMultipartUpload"
+      "s3:AbortMultipartUpload",
+      "s3:DeleteObject"
     ]
     resources = [
       aws_s3_bucket.session_storage.arn,

@@ -35,6 +35,8 @@ def handler(event, context):
     path = event.get("rawPath")
     if path == "/auth/login":
         return handler_login(event, context)
+    if path == "/auth/logout":
+        return handler_logout(event, context)
     if path == "/auth/authorize":
         return handler_authorize(event, context)
     if path == "/auth/callback":
@@ -140,6 +142,41 @@ def handler_login(event, context):
             },
             "body": json.dumps({"message": "Failed to login."}),
         }
+
+
+def handler_logout(event, context):
+    headers = event.get("headers", {})
+    cookie = headers.get("cookie")
+    sc = http.cookies.SimpleCookie(cookie)
+    session_id = sc.get("session_id")
+    if not session_id:
+        return {"statusCode": 401}
+
+    s3_bucket = os.getenv("S3_BUCKET")
+
+    s3 = boto3.client("s3")
+
+    try:
+        s3.head_object(
+            Bucket=s3_bucket,
+            Key=f"sessions/{session_id.value}/tokens.json",
+        )
+    except botocore.exceptions.ClientError as e:
+        if e.response["Error"]["Code"] == "NoSuchKey":
+            return {"statusCode": 401}
+        raise Exception(e) from e
+
+    s3.delete_object(
+        Bucket=s3_bucket,
+        Key=f"sessions/{session_id.value}/tokens.json",
+    )
+    set_cookie = "session_id=deleted; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+    return {
+        "statusCode": 200,
+        "headers": {
+            "Set-Cookie": set_cookie,
+        },
+    }
 
 
 def handler_authorize(event, context):

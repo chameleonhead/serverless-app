@@ -112,6 +112,80 @@ class TestHandler(unittest.TestCase):
         os.environ,
         {"AWS_DEFAULT_REGION": "ap-northeast-1"},
     )
+    def test_handler_logout(self):
+        s3 = boto3.client("s3", region_name="us-east-1")
+        s3.create_bucket(Bucket="dev-s3-session-storage")
+        cognito_idp = boto3.client("cognito-idp")
+        secretsmanager = boto3.client("secretsmanager")
+        user_pool_id, user_pool_domain = self.setup_cognito(
+            cognito_idp,
+            secretsmanager,
+        )
+
+        with unittest.mock.patch.dict(
+            os.environ,
+            {
+                "S3_BUCKET": "dev-s3-session-storage",
+                "COGNITO_USER_POOL_ID": user_pool_id,
+                "COGNITO_USER_POOL_DOMAIN": user_pool_domain,
+                "API_CLIENT_SECRET_ID": "dev/serverless-app/api-client",
+            },
+        ):
+            login_result = auth.handler(
+                {
+                    "rawPath": "/auth/login",
+                    "rawQueryString": "",
+                    "headers": {
+                        "host": "lambda-url.com",
+                    },
+                    "requestContext": {
+                        "http": {
+                            "method": "POST",
+                            "path": "/auth/login",
+                        },
+                        "requestId": "be4172b1-0ea4-4121-88db-08960adb054f",
+                        "timeEpoch": 1725703735416,
+                    },
+                    "body": json.dumps(
+                        {
+                            "username": "admin@example.com",
+                            "password": "P@ssw0rd",
+                        }
+                    ),
+                    "isBase64Encoded": False,
+                },
+                None,
+            )
+            cookies = http.cookies.SimpleCookie(
+                login_result["headers"]["Set-Cookie"],
+            )
+            result = auth.handler(
+                {
+                    "rawPath": "/auth/logout",
+                    "rawQueryString": "",
+                    "headers": {
+                        "host": "lambda-url.com",
+                        "cookie": cookies.output(header="", sep=";").strip(),
+                    },
+                    "requestContext": {
+                        "http": {
+                            "method": "POST",
+                            "path": "/auth/logout",
+                        },
+                        "requestId": "be4172b1-0ea4-4121-88db-08960adb054f",
+                        "timeEpoch": 1725703735416,
+                    },
+                    "isBase64Encoded": False,
+                },
+                None,
+            )
+        self.assertEqual(200, result["statusCode"])
+
+    @moto.mock_aws
+    @unittest.mock.patch.dict(
+        os.environ,
+        {"AWS_DEFAULT_REGION": "ap-northeast-1"},
+    )
     def test_handler_authorize(self):
         s3 = boto3.client("s3", region_name="us-east-1")
         s3.create_bucket(Bucket="dev-s3-session-storage")
@@ -200,16 +274,6 @@ class TestHandler(unittest.TestCase):
         client_id = secret_value["client_id"]
         client_secret = secret_value["client_secret"]
 
-        s3.put_object(
-            Bucket="dev-s3-session-storage",
-            Key="oauth2/be4172b1-0ea4-4121-88db-08960adb054f/state.json",
-            Body=json.dumps(
-                {
-                    "redirect_url": "https://example.com",
-                }
-            ).encode("utf-8"),
-        )
-
         response = cognito_idp.admin_initiate_auth(
             UserPoolId=user_pool_id,
             ClientId=client_id,
@@ -260,6 +324,25 @@ class TestHandler(unittest.TestCase):
         ):
             result = auth.handler(
                 {
+                    "rawPath": "/auth/authorize",
+                    "rawQueryString": "?idp=COGNITO",
+                    "queryStringParameters": {"idp": "COGNITO"},
+                    "headers": {
+                        "host": "lambda-url.com",
+                    },
+                    "requestContext": {
+                        "http": {
+                            "method": "GET",
+                            "path": "/auth/authorize",
+                        },
+                        "requestId": "be4172b1-0ea4-4121-88db-08960adb054f",
+                        "timeEpoch": 1725703735416,
+                    },
+                },
+                None,
+            )
+            result = auth.handler(
+                {
                     "rawPath": "/auth/callback",
                     "rawQueryString": f"?code=valid_code&state={state}",
                     "queryStringParameters": {
@@ -283,7 +366,7 @@ class TestHandler(unittest.TestCase):
         self.assertEqual(302, result["statusCode"])
         location = result["headers"]["Location"]
         self.assertEqual(
-            "https://example.com",
+            "/",
             location,
         )
 
