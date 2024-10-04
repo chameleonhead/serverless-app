@@ -8,7 +8,7 @@ import MuiCard from '@mui/material/Card';
 import { styled } from '@mui/material/styles';
 import { Navigate, useNavigation } from 'react-router-dom';
 import ForgotPassword from './ForgotPassword';
-import { GoogleIcon, LogoIcon } from './CustomIcons';
+import { LogoIcon } from './CustomIcons';
 import Layout from '../components/Layout';
 import { useAuth } from '../auth';
 import { useColorMode } from '../theme/ColorModeProvider';
@@ -48,17 +48,17 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
 }));
 
 export default function SignIn() {
-  const [open, setOpen] = useState(false);
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const { isAuthenticated, login } = useAuth();
   const { mode, changeColorMode } = useColorMode();
   const navigation = useNavigation();
 
-  const handleClickOpen = () => {
-    setOpen(true);
+  const handleForgotPasswordOpen = () => {
+    setForgotPasswordOpen(true);
   };
 
-  const handleClose = () => {
-    setOpen(false);
+  const handleForgotPasswordClose = () => {
+    setForgotPasswordOpen(false);
   };
 
   const handleSubmit = async (value: LoginFormValue) => {
@@ -98,19 +98,21 @@ export default function SignIn() {
           </Typography>
           <LoginForm
             onSubmit={handleSubmit}
-            onForgotPasswordClick={handleClickOpen}
+            onForgotPasswordClick={handleForgotPasswordOpen}
           />
-          <ForgotPassword open={open} onClose={handleClose} />
+          <ForgotPassword
+            open={forgotPasswordOpen}
+            onClose={handleForgotPasswordClose}
+          />
           <Divider>or</Divider>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Button
               type="submit"
               fullWidth
               variant="outlined"
-              onClick={() => alert('Sign in with Google')}
-              startIcon={<GoogleIcon />}
+              onClick={() => window.location.assign('/auth/login?idp=COGNITO')}
             >
-              Sign in with Google
+              Sign in with IdP
             </Button>
           </Box>
         </Card>

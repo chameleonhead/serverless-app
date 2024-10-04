@@ -87,9 +87,10 @@ resource "aws_lambda_function" "auth" {
   timeout          = 59
   environment {
     variables = {
-      "S3_BUCKET"            = aws_s3_bucket.session_storage.bucket
-      "USER_POOL_ID"         = var.cognito_user_pool_id
-      "API_CLIENT_SECRET_ID" = "${var.env_code}/serverless-app/api-client"
+      "S3_BUCKET"                = aws_s3_bucket.session_storage.bucket
+      "COGNITO_USER_POOL_ID"     = var.cognito_user_pool_id
+      "COGNITO_USER_POOL_DOMAIN" = var.cognito_user_pool_domain
+      "API_CLIENT_SECRET_ID"     = "${var.env_code}/serverless-app/api-client"
     }
   }
 }

@@ -9,8 +9,9 @@ module "idp" {
 module "bff" {
   source = "./modules/bff"
 
-  env_code             = var.env_code
-  cognito_user_pool_id = module.idp.user_pool_id
+  env_code                 = var.env_code
+  cognito_user_pool_id     = module.idp.user_pool_id
+  cognito_user_pool_domain = module.idp.user_pool_domain
 }
 
 module "frontend" {

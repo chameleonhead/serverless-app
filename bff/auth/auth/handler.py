@@ -6,6 +6,8 @@ import http.cookies
 import json
 import logging
 import os
+import urllib.parse
+import uuid
 
 import boto3
 import botocore
@@ -33,6 +35,8 @@ def handler(event, context):
     path = event.get("rawPath")
     if path == "/auth/login":
         return handler_login(event, context)
+    if path == "/auth/callback":
+        return handler_callback(event, context)
     if path == "/auth/session":
         return handler_session(event, context)
 
@@ -42,6 +46,58 @@ def handler(event, context):
 
 
 def handler_login(event, context):
+    if event.get("queryStringParameters", {}).get("idp"):
+        query_params = event.get("queryStringParameters")
+        idp = query_params.get("idp")
+
+        s3_bucket = os.getenv("S3_BUCKET")
+        cognito_user_pool_domain = os.getenv("COGNITO_USER_POOL_DOMAIN")
+        api_client_secret_id = os.getenv("API_CLIENT_SECRET_ID")
+
+        s3 = boto3.client("s3")
+        secretsmanager = boto3.client("secretsmanager")
+
+        secret_response = secretsmanager.get_secret_value(
+            SecretId=api_client_secret_id,
+        )
+
+        secret_value = json.loads(secret_response["SecretString"])
+        client_id = secret_value["client_id"]
+        client_secret = secret_value["client_secret"]
+        redirect_uri = secret_value["redirect_uri"]
+
+        request_id = str(uuid.uuid4())
+        redirect_url = query_params.get("redirect_url")
+
+        s3.put_object(
+            Bucket=s3_bucket,
+            Key=f"oauth2/{request_id}/state.json",
+            Body=json.dumps({"redirect_url": redirect_url}).encode("utf-8"),
+        )
+        query = urllib.parse.urlencode(
+            {
+                "response_type": "code",
+                "client_id": client_id,
+                "redirect_uri": redirect_uri,
+                "state": base64.b64encode(
+                    json.dumps(
+                        {
+                            "request_id": request_id,
+                        }
+                    ).encode()
+                ).decode(),
+                "identity_provider": idp,
+                "scope": "openid profile",
+            }
+        )
+
+        return {
+            "statusCode": 302,
+            "headers": {
+                "Location": f"https://{cognito_user_pool_domain}/"
+                + f"oauth2/authorize?{query}"
+            },
+        }
     body = event.get("body")
     if not body:
         return {"statusCode": 400}
@@ -49,7 +105,7 @@ def handler_login(event, context):
         body = base64.b64decode(body).decode("utf-8")
 
     s3_bucket = os.getenv("S3_BUCKET")
-    user_pool_id = os.getenv("USER_POOL_ID")
+    cognito_user_pool_id = os.getenv("COGNITO_USER_POOL_ID")
     api_client_secret_id = os.getenv("API_CLIENT_SECRET_ID")
 
     s3 = boto3.client("s3")
@@ -67,7 +123,7 @@ def handler_login(event, context):
     body = json.loads(body)
     try:
         response = cognito_idp.admin_initiate_auth(
-            UserPoolId=user_pool_id,
+            UserPoolId=cognito_user_pool_id,
             ClientId=client_id,
             AuthFlow="ADMIN_USER_PASSWORD_AUTH",
             AuthParameters={
@@ -134,6 +190,11 @@ def handler_login(event, context):
             },
             "body": json.dumps({"message": "Failed to login."}),
         }
+
+
+def handler_callback(event, context):
+    print(event)
+    pass
 
 
 def handler_session(event, context):

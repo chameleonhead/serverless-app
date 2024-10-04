@@ -15,6 +15,10 @@ class TestHandler(unittest.TestCase):
         user_pool = cognito_idp.create_user_pool(
             PoolName="dev-user-pool",
         )["UserPool"]
+        user_pool_domain = cognito_idp.create_user_pool_domain(
+            UserPoolId=user_pool["Id"],
+            Domain=user_pool["Id"],
+        )
         cognito_idp.admin_create_user(
             UserPoolId=user_pool["Id"],
             Username="admin@example.com",
@@ -40,10 +44,11 @@ class TestHandler(unittest.TestCase):
                 {
                     "client_id": user_pool_client["ClientId"],
                     "client_secret": user_pool_client["ClientSecret"],
+                    "redirect_uri": "https://example.com/auth/callback",
                 }
             ),
         )
-        return user_pool["Id"]
+        return user_pool["Id"], user_pool_domain["CloudFrontDomain"]
 
     @moto.mock_aws
     @unittest.mock.patch.dict(
@@ -55,13 +60,17 @@ class TestHandler(unittest.TestCase):
         s3.create_bucket(Bucket="dev-s3-session-storage")
         cognito_idp = boto3.client("cognito-idp")
         secretsmanager = boto3.client("secretsmanager")
-        user_pool_id = self.setup_cognito(cognito_idp, secretsmanager)
+        user_pool_id, user_pool_domain = self.setup_cognito(
+            cognito_idp,
+            secretsmanager,
+        )
 
         with unittest.mock.patch.dict(
             os.environ,
             {
                 "S3_BUCKET": "dev-s3-session-storage",
-                "USER_POOL_ID": user_pool_id,
+                "COGNITO_USER_POOL_ID": user_pool_id,
+                "COGNITO_USER_POOL_DOMAIN": user_pool_domain,
                 "API_CLIENT_SECRET_ID": "dev/serverless-app/api-client",
             },
         ):
@@ -70,7 +79,7 @@ class TestHandler(unittest.TestCase):
                     "rawPath": "/auth/login",
                     "rawQueryString": "",
                     "headers": {
-                        "host": "example.com",
+                        "host": "lambda-url.com",
                     },
                     "requestContext": {
                         "http": {
@@ -100,18 +109,69 @@ class TestHandler(unittest.TestCase):
         os.environ,
         {"AWS_DEFAULT_REGION": "ap-northeast-1"},
     )
-    def test_handler_session(self):
+    def test_handler_login_with_idp(self):
         s3 = boto3.client("s3", region_name="us-east-1")
         s3.create_bucket(Bucket="dev-s3-session-storage")
         cognito_idp = boto3.client("cognito-idp")
         secretsmanager = boto3.client("secretsmanager")
-        user_pool_id = self.setup_cognito(cognito_idp, secretsmanager)
+        user_pool_id, user_pool_domain = self.setup_cognito(
+            cognito_idp,
+            secretsmanager,
+        )
 
         with unittest.mock.patch.dict(
             os.environ,
             {
                 "S3_BUCKET": "dev-s3-session-storage",
-                "USER_POOL_ID": user_pool_id,
+                "COGNITO_USER_POOL_ID": user_pool_id,
+                "COGNITO_USER_POOL_DOMAIN": user_pool_domain,
+                "API_CLIENT_SECRET_ID": "dev/serverless-app/api-client",
+            },
+        ):
+            result = auth.handler(
+                {
+                    "rawPath": "/auth/login",
+                    "rawQueryString": "?idp=COGNITO",
+                    "queryStringParameters": {"idp": "COGNITO"},
+                    "headers": {
+                        "host": "lambda-url.com",
+                    },
+                    "requestContext": {
+                        "http": {
+                            "method": "GET",
+                            "path": "/auth/login",
+                        },
+                        "requestId": "be4172b1-0ea4-4121-88db-08960adb054f",
+                        "timeEpoch": 1725703735416,
+                    },
+                },
+                None,
+            )
+        self.assertEqual(302, result["statusCode"])
+        location = result["headers"]["Location"]
+        print(location)
+
+    @moto.mock_aws
+    @unittest.mock.patch.dict(
+        os.environ,
+        {"AWS_DEFAULT_REGION": "ap-northeast-1"},
+    )
+    def test_handler_session(self):
+        s3 = boto3.client("s3", region_name="us-east-1")
+        s3.create_bucket(Bucket="dev-s3-session-storage")
+        cognito_idp = boto3.client("cognito-idp")
+        secretsmanager = boto3.client("secretsmanager")
+        user_pool_id, user_pool_domain = self.setup_cognito(
+            cognito_idp,
+            secretsmanager,
+        )
+
+        with unittest.mock.patch.dict(
+            os.environ,
+            {
+                "S3_BUCKET": "dev-s3-session-storage",
+                "COGNITO_USER_POOL_ID": user_pool_id,
+                "COGNITO_USER_POOL_DOMAIN": user_pool_domain,
                 "API_CLIENT_SECRET_ID": "dev/serverless-app/api-client",
             },
         ):
@@ -120,7 +180,7 @@ class TestHandler(unittest.TestCase):
                     "rawPath": "/auth/login",
                     "rawQueryString": "",
                     "headers": {
-                        "host": "example.com",
+                        "host": "lambda-url.com",
                     },
                     "requestContext": {
                         "http": {
@@ -148,7 +208,7 @@ class TestHandler(unittest.TestCase):
                     "rawPath": "/auth/session",
                     "rawQueryString": "",
                     "headers": {
-                        "host": "example.com",
+                        "host": "lambda-url.com",
                         "cookie": cookies.output(header="", sep=";").strip(),
                     },
                     "requestContext": {
