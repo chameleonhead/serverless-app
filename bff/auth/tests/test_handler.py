@@ -10,7 +10,6 @@ import boto3
 import moto
 
 import auth
-import auth.handler
 
 
 class TestHandler(unittest.TestCase):

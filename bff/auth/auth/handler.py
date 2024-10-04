@@ -14,6 +14,8 @@ import botocore.exceptions
 import requests
 from jose import jwt
 
+from .storage import DataNotFoundException, Storage
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     level=logging.INFO,
@@ -101,20 +103,18 @@ def handler_login(event, context):
             claims["sub"],
             session_id,
         )
-        s3.put_object(
-            Bucket=s3_bucket,
-            Key=f"sessions/{session_id}/tokens.json",
-            Body=json.dumps(
-                {
-                    "id_token": id_token,
-                    "access_token": access_token,
-                    "refresh_token": refresh_token,
-                    "expiration": (
-                        datetime.datetime.now(datetime.timezone.utc)
-                        + datetime.timedelta(seconds=expires_in)
-                    ).isoformat(),
-                }
-            ).encode("utf-8"),
+        st = Storage(s3, s3_bucket)
+        st.save_tokens(
+            session_id,
+            {
+                "id_token": id_token,
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "expiration": (
+                    datetime.datetime.now(datetime.timezone.utc)
+                    + datetime.timedelta(seconds=expires_in)
+                ).isoformat(),
+            },
         )
         set_cookie = f"session_id={session_id}"
         return {
@@ -155,21 +155,13 @@ def handler_logout(event, context):
     s3_bucket = os.getenv("S3_BUCKET")
 
     s3 = boto3.client("s3")
+    st = Storage(s3, s3_bucket)
 
     try:
-        s3.head_object(
-            Bucket=s3_bucket,
-            Key=f"sessions/{session_id.value}/tokens.json",
-        )
-    except botocore.exceptions.ClientError as e:
-        if e.response["Error"]["Code"] == "NoSuchKey":
-            return {"statusCode": 401}
-        raise Exception(e) from e
+        st.delete_tokens(session_id.value)
+    except DataNotFoundException:
+        return {"statusCode": 401}
 
-    s3.delete_object(
-        Bucket=s3_bucket,
-        Key=f"sessions/{session_id.value}/tokens.json",
-    )
     set_cookie = "session_id=deleted; expires=Thu, 01 Jan 1970 00:00:00 GMT"
     return {
         "statusCode": 200,
@@ -207,11 +199,8 @@ def handler_authorize(event, context):
     request_id = event.get("requestContext").get("requestId")
     redirect_url = query_params.get("redirect_url")
 
-    s3.put_object(
-        Bucket=s3_bucket,
-        Key=f"oauth2/{request_id}/state.json",
-        Body=json.dumps({"redirect_url": redirect_url}).encode("utf-8"),
-    )
+    st = Storage(s3, s3_bucket)
+    st.save_state(request_id, {"redirect_url": redirect_url})
     query = urllib.parse.urlencode(
         {
             "response_type": "code",
@@ -257,11 +246,8 @@ def handler_callback(event, context):
     state = query_string_parameters.get("state")
     state = json.loads(base64.b64decode(state))
     request_id = state["request_id"]
-    state_result = s3.get_object(
-        Bucket=s3_bucket,
-        Key=f"oauth2/{request_id}/state.json",
-    )
-    return_uri = json.loads(state_result["Body"].read())["redirect_url"]
+    st = Storage(s3, s3_bucket)
+    return_uri = st.get_state(request_id)["redirect_url"]
 
     secretsmanager = boto3.client("secretsmanager")
 
@@ -303,22 +289,19 @@ def handler_callback(event, context):
             claims["sub"],
             session_id,
         )
-        s3.put_object(
-            Bucket=s3_bucket,
-            Key=f"sessions/{session_id}/tokens.json",
-            Body=json.dumps(
-                {
-                    "id_token": id_token,
-                    "access_token": access_token,
-                    "refresh_token": refresh_token,
-                    "expiration": (
-                        datetime.datetime.now(datetime.timezone.utc)
-                        + datetime.timedelta(seconds=expires_in)
-                    ).isoformat(),
-                }
-            ).encode("utf-8"),
+        st = Storage(s3, s3_bucket)
+        st.save_tokens(
+            session_id,
+            {
+                "id_token": id_token,
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "expiration": (
+                    datetime.datetime.now(datetime.timezone.utc)
+                    + datetime.timedelta(seconds=expires_in)
+                ).isoformat(),
+            },
         )
-
         set_cookie = f"session_id={session_id}"
         return {
             "statusCode": 302,
@@ -350,16 +333,12 @@ def handler_session(event, context):
     s3 = boto3.client("s3")
     cognito_idp = boto3.client("cognito-idp")
     secretsmanager = boto3.client("secretsmanager")
+    st = Storage(s3, s3_bucket)
 
     try:
-        tokens_response = s3.get_object(
-            Bucket=s3_bucket, Key=f"sessions/{session_id.value}/tokens.json"
-        )
-        tokens = json.loads(tokens_response["Body"].read())
-    except botocore.exceptions.ClientError as e:
-        if e.response["Error"]["Code"] == "NoSuchKey":
-            return {"statusCode": 401}
-        raise Exception(e) from e
+        tokens = st.get_tokens(session_id.value)
+    except DataNotFoundException:
+        return {"statusCode": 401}
 
     claims = jwt.get_unverified_claims(tokens["id_token"])
 
@@ -412,21 +391,17 @@ def handler_session(event, context):
         refresh_token = result.get("RefreshToken", tokens["refresh_token"])
         expires_in = result["ExpiresIn"]
         claims = jwt.get_unverified_claims(id_token)
-
-        s3.put_object(
-            Bucket=s3_bucket,
-            Key=f"sessions/{session_id}/tokens.json",
-            Body=json.dumps(
-                {
-                    "id_token": id_token,
-                    "access_token": access_token,
-                    "refresh_token": refresh_token,
-                    "expiration": (
-                        datetime.datetime.now(datetime.timezone.utc)
-                        + datetime.timedelta(seconds=expires_in)
-                    ).isoformat(),
-                }
-            ).encode("utf-8"),
+        st.save_token(
+            session_id.value,
+            {
+                "id_token": id_token,
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "expiration": (
+                    datetime.datetime.now(datetime.timezone.utc)
+                    + datetime.timedelta(seconds=expires_in)
+                ).isoformat(),
+            },
         )
         return {
             "statusCode": 200,
