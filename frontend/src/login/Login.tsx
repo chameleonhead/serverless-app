@@ -110,7 +110,9 @@ export default function SignIn() {
               type="submit"
               fullWidth
               variant="outlined"
-              onClick={() => window.location.assign('/auth/login?idp=COGNITO')}
+              onClick={() =>
+                window.location.assign('/auth/authorize?idp=COGNITO')
+              }
             >
               Sign in with IdP
             </Button>

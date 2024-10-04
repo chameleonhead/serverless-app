@@ -35,6 +35,8 @@ def handler(event, context):
     path = event.get("rawPath")
     if path == "/auth/login":
         return handler_login(event, context)
+    if path == "/auth/authorize":
+        return handler_authorize(event, context)
     if path == "/auth/callback":
         return handler_callback(event, context)
     if path == "/auth/session":
@@ -46,58 +48,6 @@ def handler(event, context):
 
 
 def handler_login(event, context):
-    if event.get("queryStringParameters", {}).get("idp"):
-        query_params = event.get("queryStringParameters")
-        idp = query_params.get("idp")
-
-        s3_bucket = os.getenv("S3_BUCKET")
-        cognito_user_pool_domain = os.getenv("COGNITO_USER_POOL_DOMAIN")
-        api_client_secret_id = os.getenv("API_CLIENT_SECRET_ID")
-
-        s3 = boto3.client("s3")
-        secretsmanager = boto3.client("secretsmanager")
-
-        secret_response = secretsmanager.get_secret_value(
-            SecretId=api_client_secret_id,
-        )
-
-        secret_value = json.loads(secret_response["SecretString"])
-        client_id = secret_value["client_id"]
-        client_secret = secret_value["client_secret"]
-        redirect_uri = secret_value["redirect_uri"]
-
-        request_id = event.get("requestContext").get("requestId")
-        redirect_url = query_params.get("redirect_url")
-
-        s3.put_object(
-            Bucket=s3_bucket,
-            Key=f"oauth2/{request_id}/state.json",
-            Body=json.dumps({"redirect_url": redirect_url}).encode("utf-8"),
-        )
-        query = urllib.parse.urlencode(
-            {
-                "response_type": "code",
-                "client_id": client_id,
-                "redirect_uri": redirect_uri,
-                "state": base64.b64encode(
-                    json.dumps(
-                        {
-                            "request_id": request_id,
-                        }
-                    ).encode()
-                ).decode(),
-                "identity_provider": idp,
-                "scope": "openid profile",
-            }
-        )
-
-        return {
-            "statusCode": 302,
-            "headers": {
-                "Location": f"https://{cognito_user_pool_domain}/"
-                + f"oauth2/authorize?{query}"
-            },
-        }
     body = event.get("body")
     if not body:
         return {"statusCode": 400}
@@ -190,6 +140,65 @@ def handler_login(event, context):
             },
             "body": json.dumps({"message": "Failed to login."}),
         }
+
+
+def handler_authorize(event, context):
+    query_params = event.get("queryStringParameters", {})
+    idp = query_params.get("idp")
+    if not idp:
+        return {
+            "statusCode": 400,
+            "headers": set_security_headers({}),
+            "body": "Bad Request",
+        }
+
+    s3_bucket = os.getenv("S3_BUCKET")
+    cognito_user_pool_domain = os.getenv("COGNITO_USER_POOL_DOMAIN")
+    api_client_secret_id = os.getenv("API_CLIENT_SECRET_ID")
+
+    s3 = boto3.client("s3")
+    secretsmanager = boto3.client("secretsmanager")
+
+    secret_response = secretsmanager.get_secret_value(
+        SecretId=api_client_secret_id,
+    )
+
+    secret_value = json.loads(secret_response["SecretString"])
+    client_id = secret_value["client_id"]
+    redirect_uri = secret_value["redirect_uri"]
+
+    request_id = event.get("requestContext").get("requestId")
+    redirect_url = query_params.get("redirect_url")
+
+    s3.put_object(
+        Bucket=s3_bucket,
+        Key=f"oauth2/{request_id}/state.json",
+        Body=json.dumps({"redirect_url": redirect_url}).encode("utf-8"),
+    )
+    query = urllib.parse.urlencode(
+        {
+            "response_type": "code",
+            "client_id": client_id,
+            "redirect_uri": redirect_uri,
+            "state": base64.b64encode(
+                json.dumps(
+                    {
+                        "request_id": request_id,
+                    }
+                ).encode()
+            ).decode(),
+            "identity_provider": idp,
+            "scope": "openid profile",
+        }
+    )
+
+    return {
+        "statusCode": 302,
+        "headers": {
+            "Location": f"https://{cognito_user_pool_domain}/"
+            + f"oauth2/authorize?{query}"
+        },
+    }
 
 
 def handler_callback(event, context):

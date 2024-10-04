@@ -112,7 +112,7 @@ class TestHandler(unittest.TestCase):
         os.environ,
         {"AWS_DEFAULT_REGION": "ap-northeast-1"},
     )
-    def test_handler_login_with_idp(self):
+    def test_handler_authorize(self):
         s3 = boto3.client("s3", region_name="us-east-1")
         s3.create_bucket(Bucket="dev-s3-session-storage")
         cognito_idp = boto3.client("cognito-idp")
@@ -139,7 +139,7 @@ class TestHandler(unittest.TestCase):
         ):
             result = auth.handler(
                 {
-                    "rawPath": "/auth/login",
+                    "rawPath": "/auth/authorize",
                     "rawQueryString": "?idp=COGNITO",
                     "queryStringParameters": {"idp": "COGNITO"},
                     "headers": {
@@ -148,7 +148,7 @@ class TestHandler(unittest.TestCase):
                     "requestContext": {
                         "http": {
                             "method": "GET",
-                            "path": "/auth/login",
+                            "path": "/auth/authorize",
                         },
                         "requestId": "be4172b1-0ea4-4121-88db-08960adb054f",
                         "timeEpoch": 1725703735416,
