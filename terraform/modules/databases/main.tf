@@ -1,3 +1,20 @@
+resource "aws_security_group" "apidb" {
+  name   = "${var.env_code}-sg-apidb"
+  vpc_id = var.vpc_id
+  tags = {
+    Name = "${var.env_code}-sg-apidb"
+  }
+}
+
+resource "aws_security_group_rule" "apidb" {
+  security_group_id        = aws_security_group.apidb.id
+  type                     = "egress"
+  source_security_group_id = aws_security_group.apidb.id
+  protocol                 = "all"
+  from_port                = 0
+  to_port                  = 65535
+}
+
 resource "aws_db_subnet_group" "apidb" {
   name       = "${var.env_code}-db-subnet-group-api"
   subnet_ids = var.db_subnet_ids
@@ -33,6 +50,7 @@ resource "aws_rds_cluster" "apidb" {
   master_username                     = "postgres"
   manage_master_user_password         = true
   db_subnet_group_name                = aws_db_subnet_group.apidb.name
+  vpc_security_group_ids              = [aws_security_group.apidb.id]
   enable_http_endpoint                = true
   iam_database_authentication_enabled = true
   performance_insights_enabled        = true
@@ -46,7 +64,6 @@ resource "aws_rds_cluster" "apidb" {
     max_capacity = 1
   }
 }
-
 
 resource "aws_rds_cluster_instance" "apidb_instance1" {
   cluster_identifier      = aws_rds_cluster.apidb.id
