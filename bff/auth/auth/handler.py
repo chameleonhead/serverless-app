@@ -1,7 +1,6 @@
 import base64
 import datetime
 import hashlib
-import hmac
 import http.cookies
 import json
 import logging
@@ -11,9 +10,9 @@ import urllib.parse
 import boto3
 import botocore
 import botocore.exceptions
-import requests
 from jose import jwt
 
+from .identity import Identity
 from .storage import DataNotFoundException, Storage
 
 logger = logging.getLogger(__name__)
@@ -24,27 +23,18 @@ logging.basicConfig(
 )
 
 
-def generate_secret_hash(client_id, client_secret, username):
-    digest = hmac.digest(
-        client_secret.encode("utf-8"),
-        (username + client_id).encode("utf-8"),
-        hashlib.sha256,
-    )
-    return base64.b64encode(digest).decode()
-
-
 def handler(event, context):
     path = event.get("rawPath")
     if path == "/auth/login":
         return handler_login(event, context)
     if path == "/auth/logout":
         return handler_logout(event, context)
+    if path == "/auth/session":
+        return handler_session(event, context)
     if path == "/auth/authorize":
         return handler_authorize(event, context)
     if path == "/auth/callback":
         return handler_callback(event, context)
-    if path == "/auth/session":
-        return handler_session(event, context)
 
     return {
         "statusCode": 404,
@@ -57,65 +47,38 @@ def handler_login(event, context):
         return {"statusCode": 400}
     if event["isBase64Encoded"]:
         body = base64.b64decode(body).decode("utf-8")
+    body = json.loads(body)
 
     s3_bucket = os.getenv("S3_BUCKET")
-    cognito_user_pool_id = os.getenv("COGNITO_USER_POOL_ID")
-    api_client_secret_id = os.getenv("API_CLIENT_SECRET_ID")
-
     s3 = boto3.client("s3")
+    st = Storage(s3, s3_bucket)
+
+    cognito_user_pool_id = os.getenv("COGNITO_USER_POOL_ID")
+    cognito_user_pool_domain = os.getenv("COGNITO_USER_POOL_DOMAIN")
+    api_client_secret_id = os.getenv("API_CLIENT_SECRET_ID")
     cognito_idp = boto3.client("cognito-idp")
     secretsmanager = boto3.client("secretsmanager")
 
-    secret_response = secretsmanager.get_secret_value(
-        SecretId=api_client_secret_id,
+    idp = Identity(
+        cognito_idp,
+        secretsmanager,
+        cognito_user_pool_id,
+        cognito_user_pool_domain,
+        api_client_secret_id,
     )
 
-    secret_value = json.loads(secret_response["SecretString"])
-    client_id = secret_value["client_id"]
-    client_secret = secret_value["client_secret"]
-
-    body = json.loads(body)
     try:
-        response = cognito_idp.admin_initiate_auth(
-            UserPoolId=cognito_user_pool_id,
-            ClientId=client_id,
-            AuthFlow="ADMIN_USER_PASSWORD_AUTH",
-            AuthParameters={
-                "USERNAME": body["username"],
-                "PASSWORD": body["password"],
-                "SECRET_HASH": generate_secret_hash(
-                    client_id,
-                    client_secret,
-                    body["username"],
-                ),
-            },
-        )
-
-        result = response["AuthenticationResult"]
-        id_token = result["IdToken"]
-        access_token = result["AccessToken"]
-        refresh_token = result["RefreshToken"]
-        expires_in = result["ExpiresIn"]
-        claims = jwt.get_unverified_claims(id_token)
-        session_id = hashlib.sha256(refresh_token.encode("utf-8")).hexdigest()
+        tokens = idp.login(body["username"], body["password"])
+        claims = jwt.get_unverified_claims(tokens["id_token"])
+        session_id = hashlib.sha256(
+            tokens["refresh_token"].encode("utf-8"),
+        ).hexdigest()
         logger.info(
             "User %s logged in (session id: %s)",
             claims["sub"],
             session_id,
         )
-        st = Storage(s3, s3_bucket)
-        st.save_tokens(
-            session_id,
-            {
-                "id_token": id_token,
-                "access_token": access_token,
-                "refresh_token": refresh_token,
-                "expiration": (
-                    datetime.datetime.now(datetime.timezone.utc)
-                    + datetime.timedelta(seconds=expires_in)
-                ).isoformat(),
-            },
-        )
+        st.save_tokens(session_id, tokens)
         set_cookie = f"session_id={session_id}"
         return {
             "statusCode": 200,
@@ -126,8 +89,8 @@ def handler_login(event, context):
             "body": json.dumps(
                 {
                     "session": {
-                        "access_token": access_token,
-                        "id_token": id_token,
+                        "access_token": tokens["access_token"],
+                        "id_token": tokens["id_token"],
                     },
                     "claims": claims,
                 }
@@ -239,83 +202,50 @@ def handler_callback(event, context):
         }
 
     s3_bucket = os.getenv("S3_BUCKET")
+    s3 = boto3.client("s3")
+    st = Storage(s3, s3_bucket)
+
+    cognito_user_pool_id = os.getenv("COGNITO_USER_POOL_ID")
     cognito_user_pool_domain = os.getenv("COGNITO_USER_POOL_DOMAIN")
     api_client_secret_id = os.getenv("API_CLIENT_SECRET_ID")
+    cognito_idp = boto3.client("cognito-idp")
+    secretsmanager = boto3.client("secretsmanager")
 
-    s3 = boto3.client("s3")
+    idp = Identity(
+        cognito_idp,
+        secretsmanager,
+        cognito_user_pool_id,
+        cognito_user_pool_domain,
+        api_client_secret_id,
+    )
+
     state = query_string_parameters.get("state")
     state = json.loads(base64.b64decode(state))
     request_id = state["request_id"]
-    st = Storage(s3, s3_bucket)
     return_uri = st.get_state(request_id)["redirect_url"]
 
-    secretsmanager = boto3.client("secretsmanager")
+    tokens = idp.request_tokens_by_code(code)
 
-    secret_response = secretsmanager.get_secret_value(
-        SecretId=api_client_secret_id,
+    # トークンの取得に成功した場合
+    claims = jwt.get_unverified_claims(tokens["id_token"])
+    session_id = hashlib.sha256(
+        tokens["refresh_token"].encode("utf-8"),
+    ).hexdigest()
+    logger.info(
+        "User %s logged in (session id: %s)",
+        claims["sub"],
+        session_id,
     )
-
-    secret_value = json.loads(secret_response["SecretString"])
-    client_id = secret_value["client_id"]
-    client_secret = secret_value["client_secret"]
-    redirect_uri = secret_value["redirect_uri"]
-
-    # Cognitoにトークンを要求
-    headers = {"Content-type": "application/x-www-form-urlencoded"}
-    body = {
-        "grant_type": "authorization_code",
-        "code": code,
-        "client_id": client_id,
-        "redirect_uri": redirect_uri,
+    st = Storage(s3, s3_bucket)
+    st.save_tokens(session_id, tokens)
+    set_cookie = f"session_id={session_id}"
+    return {
+        "statusCode": 302,
+        "headers": {
+            "Set-Cookie": set_cookie,
+            "Location": return_uri if return_uri else "/",
+        },
     }
-
-    response = requests.post(
-        f"https://{cognito_user_pool_domain}/oauth2/token",
-        data=body,
-        headers=headers,
-        auth=(client_id, client_secret),
-    )
-    if response.status_code == 200:
-        # トークンの取得に成功した場合
-        result = response.json()
-        id_token = result["id_token"]
-        access_token = result["access_token"]
-        refresh_token = result["refresh_token"]
-        expires_in = result["expires_in"]
-        claims = jwt.get_unverified_claims(id_token)
-        session_id = hashlib.sha256(refresh_token.encode("utf-8")).hexdigest()
-        logger.info(
-            "User %s logged in (session id: %s)",
-            claims["sub"],
-            session_id,
-        )
-        st = Storage(s3, s3_bucket)
-        st.save_tokens(
-            session_id,
-            {
-                "id_token": id_token,
-                "access_token": access_token,
-                "refresh_token": refresh_token,
-                "expiration": (
-                    datetime.datetime.now(datetime.timezone.utc)
-                    + datetime.timedelta(seconds=expires_in)
-                ).isoformat(),
-            },
-        )
-        set_cookie = f"session_id={session_id}"
-        return {
-            "statusCode": 302,
-            "headers": {
-                "Set-Cookie": set_cookie,
-                "Location": return_uri if return_uri else "/",
-            },
-        }
-    else:
-        # トークンの取得に失敗した場合
-        return {
-            "statusCode": response.status_code,
-            "body": response.text,
-        }
 
 
 def handler_session(event, context):
@@ -327,13 +257,22 @@ def handler_session(event, context):
         return {"statusCode": 401}
 
     s3_bucket = os.getenv("S3_BUCKET")
-    user_pool_id = os.getenv("USER_POOL_ID")
-    api_client_secret_id = os.getenv("API_CLIENT_SECRET_ID")
-
     s3 = boto3.client("s3")
+    st = Storage(s3, s3_bucket)
+
+    cognito_user_pool_id = os.getenv("COGNITO_USER_POOL_ID")
+    cognito_user_pool_domain = os.getenv("COGNITO_USER_POOL_DOMAIN")
+    api_client_secret_id = os.getenv("API_CLIENT_SECRET_ID")
     cognito_idp = boto3.client("cognito-idp")
     secretsmanager = boto3.client("secretsmanager")
-    st = Storage(s3, s3_bucket)
+
+    idp = Identity(
+        cognito_idp,
+        secretsmanager,
+        cognito_user_pool_id,
+        cognito_user_pool_domain,
+        api_client_secret_id,
+    )
 
     try:
         tokens = st.get_tokens(session_id.value)
@@ -363,46 +302,14 @@ def handler_session(event, context):
             ),
         }
 
-    secret_response = secretsmanager.get_secret_value(
-        SecretId=api_client_secret_id,
-    )
-    secret_value = json.loads(secret_response["SecretString"])
-    client_id = secret_value["client_id"]
-    client_secret = secret_value["client_secret"]
-
     try:
-        response = cognito_idp.admin_initiate_auth(
-            UserPoolId=user_pool_id,
-            ClientId=client_id,
-            AuthFlow="REFRESH_TOKEN_AUTH",
-            AuthParameters={
-                "REFRESH_TOKEN": tokens["refresh_token"],
-                "SECRET_HASH": generate_secret_hash(
-                    client_id,
-                    client_secret,
-                    claims["username"],
-                ),
-            },
+        tokens = idp.refresh_tokens(
+            claims["username"],
+            tokens["refresh_token"],
         )
 
-        result = response["AuthenticationResult"]
-        id_token = result["IdToken"]
-        access_token = result["AccessToken"]
-        refresh_token = result.get("RefreshToken", tokens["refresh_token"])
-        expires_in = result["ExpiresIn"]
-        claims = jwt.get_unverified_claims(id_token)
-        st.save_token(
-            session_id.value,
-            {
-                "id_token": id_token,
-                "access_token": access_token,
-                "refresh_token": refresh_token,
-                "expiration": (
-                    datetime.datetime.now(datetime.timezone.utc)
-                    + datetime.timedelta(seconds=expires_in)
-                ).isoformat(),
-            },
-        )
+        claims = jwt.get_unverified_claims(tokens["id_token"])
+        st.save_token(session_id.value, tokens)
         return {
             "statusCode": 200,
             "headers": {
@@ -411,8 +318,8 @@ def handler_session(event, context):
             "body": json.dumps(
                 {
                     "session": {
-                        "access_token": access_token,
-                        "id_token": id_token,
+                        "access_token": tokens["access_token"],
+                        "id_token": tokens["id_token"],
                     },
                     "claims": claims,
                 }

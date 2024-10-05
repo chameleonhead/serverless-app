@@ -10,48 +10,12 @@ import boto3
 import moto
 
 import auth
+from auth.identity import generate_secret_hash
+
+from .test_identity import setup_cognito
 
 
 class TestHandler(unittest.TestCase):
-    def setup_cognito(self, cognito_idp, secretsmanager):
-        user_pool = cognito_idp.create_user_pool(
-            PoolName="dev-user-pool",
-        )["UserPool"]
-        user_pool_domain = cognito_idp.create_user_pool_domain(
-            UserPoolId=user_pool["Id"],
-            Domain=user_pool["Id"],
-        )
-        cognito_idp.admin_create_user(
-            UserPoolId=user_pool["Id"],
-            Username="admin@example.com",
-            UserAttributes=[
-                {"Name": "email", "Value": "user@example.com"},
-                {"Name": "email_verified", "Value": "true"},
-            ],
-        )
-        cognito_idp.admin_set_user_password(
-            UserPoolId=user_pool["Id"],
-            Username="admin@example.com",
-            Password="P@ssw0rd",
-            Permanent=True,
-        )
-        user_pool_client = cognito_idp.create_user_pool_client(
-            UserPoolId=user_pool["Id"],
-            ClientName="dev-user-pool-client",
-            GenerateSecret=True,
-        )["UserPoolClient"]
-        secretsmanager.create_secret(
-            Name="dev/serverless-app/api-client",
-            SecretString=json.dumps(
-                {
-                    "client_id": user_pool_client["ClientId"],
-                    "client_secret": user_pool_client["ClientSecret"],
-                    "redirect_uri": "https://example.com/auth/callback",
-                }
-            ),
-        )
-        return user_pool["Id"], user_pool_domain["CloudFrontDomain"]
-
     @moto.mock_aws
     @unittest.mock.patch.dict(
         os.environ,
@@ -62,7 +26,7 @@ class TestHandler(unittest.TestCase):
         s3.create_bucket(Bucket="dev-s3-session-storage")
         cognito_idp = boto3.client("cognito-idp")
         secretsmanager = boto3.client("secretsmanager")
-        user_pool_id, user_pool_domain = self.setup_cognito(
+        user_pool_id, user_pool_domain = setup_cognito(
             cognito_idp,
             secretsmanager,
         )
@@ -116,7 +80,7 @@ class TestHandler(unittest.TestCase):
         s3.create_bucket(Bucket="dev-s3-session-storage")
         cognito_idp = boto3.client("cognito-idp")
         secretsmanager = boto3.client("secretsmanager")
-        user_pool_id, user_pool_domain = self.setup_cognito(
+        user_pool_id, user_pool_domain = setup_cognito(
             cognito_idp,
             secretsmanager,
         )
@@ -190,7 +154,7 @@ class TestHandler(unittest.TestCase):
         s3.create_bucket(Bucket="dev-s3-session-storage")
         cognito_idp = boto3.client("cognito-idp")
         secretsmanager = boto3.client("secretsmanager")
-        user_pool_id, user_pool_domain = self.setup_cognito(
+        user_pool_id, user_pool_domain = setup_cognito(
             cognito_idp,
             secretsmanager,
         )
@@ -260,7 +224,7 @@ class TestHandler(unittest.TestCase):
         s3.create_bucket(Bucket="dev-s3-session-storage")
         cognito_idp = boto3.client("cognito-idp")
         secretsmanager = boto3.client("secretsmanager")
-        user_pool_id, user_pool_domain = self.setup_cognito(
+        user_pool_id, user_pool_domain = setup_cognito(
             cognito_idp,
             secretsmanager,
         )
@@ -280,7 +244,7 @@ class TestHandler(unittest.TestCase):
             AuthParameters={
                 "USERNAME": "admin@example.com",
                 "PASSWORD": "P@ssw0rd",
-                "SECRET_HASH": auth.generate_secret_hash(
+                "SECRET_HASH": generate_secret_hash(
                     client_id,
                     client_secret,
                     "admin@example.com",
@@ -379,7 +343,7 @@ class TestHandler(unittest.TestCase):
         s3.create_bucket(Bucket="dev-s3-session-storage")
         cognito_idp = boto3.client("cognito-idp")
         secretsmanager = boto3.client("secretsmanager")
-        user_pool_id, user_pool_domain = self.setup_cognito(
+        user_pool_id, user_pool_domain = setup_cognito(
             cognito_idp,
             secretsmanager,
         )
