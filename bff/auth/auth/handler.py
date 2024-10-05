@@ -82,10 +82,12 @@ def handler_login(event, context):
         set_cookie = f"session_id={session_id}"
         return {
             "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json",
-                "Set-Cookie": set_cookie,
-            },
+            "headers": set_security_headers(
+                {
+                    "Content-Type": "application/json",
+                    "Set-Cookie": set_cookie,
+                }
+            ),
             "body": json.dumps(
                 {
                     "session": {
@@ -100,9 +102,11 @@ def handler_login(event, context):
         logger.exception(e)
         return {
             "statusCode": 403,
-            "headers": {
-                "Content-Type": "application/json",
-            },
+            "headers": set_security_headers(
+                {
+                    "Content-Type": "application/json",
+                }
+            ),
             "body": json.dumps({"message": "Failed to login."}),
         }
 
@@ -121,16 +125,26 @@ def handler_logout(event, context):
     st = Storage(s3, s3_bucket)
 
     try:
+        tokens = st.get_tokens(session_id.value)
         st.delete_tokens(session_id.value)
     except DataNotFoundException:
         return {"statusCode": 401}
 
+    claims = jwt.get_unverified_claims(tokens["id_token"])
+    logger.info(
+        "User %s logged out (session id: %s)",
+        claims["sub"],
+        session_id.value,
+    )
+
     set_cookie = "session_id=deleted; expires=Thu, 01 Jan 1970 00:00:00 GMT"
     return {
         "statusCode": 200,
-        "headers": {
-            "Set-Cookie": set_cookie,
-        },
+        "headers": set_security_headers(
+            {
+                "Set-Cookie": set_cookie,
+            }
+        ),
     }
 
 
@@ -183,10 +197,12 @@ def handler_authorize(event, context):
 
     return {
         "statusCode": 302,
-        "headers": {
-            "Location": f"https://{cognito_user_pool_domain}/"
-            + f"oauth2/authorize?{query}"
-        },
+        "headers": set_security_headers(
+            {
+                "Location": f"https://{cognito_user_pool_domain}"
+                + f"/oauth2/authorize?{query}"
+            }
+        ),
     }
 
 
@@ -241,10 +257,12 @@ def handler_callback(event, context):
     set_cookie = f"session_id={session_id}"
     return {
         "statusCode": 302,
-        "headers": {
-            "Set-Cookie": set_cookie,
-            "Location": return_uri if return_uri else "/",
-        },
+        "headers": set_security_headers(
+            {
+                "Set-Cookie": set_cookie,
+                "Location": return_uri if return_uri else "/",
+            }
+        ),
     }
 
 
@@ -288,9 +306,11 @@ def handler_session(event, context):
     ) + datetime.timedelta(minutes=20):
         return {
             "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json",
-            },
+            "headers": set_security_headers(
+                {
+                    "Content-Type": "application/json",
+                }
+            ),
             "body": json.dumps(
                 {
                     "session": {
@@ -312,9 +332,11 @@ def handler_session(event, context):
         st.save_token(session_id.value, tokens)
         return {
             "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json",
-            },
+            "headers": set_security_headers(
+                {
+                    "Content-Type": "application/json",
+                }
+            ),
             "body": json.dumps(
                 {
                     "session": {
