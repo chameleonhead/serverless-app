@@ -1,5 +1,19 @@
 data "aws_caller_identity" "current" {}
 
+module "network" {
+  source = "./modules/network"
+
+  env_code = var.env_code
+}
+
+module "databases" {
+  source = "./modules/databases"
+
+  env_code      = var.env_code
+  vpc_id        = module.network.vpc_id
+  db_subnet_ids = module.network.subnet_private_db_ids
+}
+
 module "idp" {
   source = "./modules/idp"
 
