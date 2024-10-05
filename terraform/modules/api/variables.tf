@@ -26,10 +26,10 @@ variable "db_security_group_id" {
   type = string
 }
 
-variable "db_secret_arn" {
+variable "db_resource_id" {
   type = string
 }
 
-variable "db_cluster_identifier" {
+variable "db_host" {
   type = string
 }

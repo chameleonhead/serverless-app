@@ -24,8 +24,10 @@ data "aws_iam_policy_document" "assume_role_lambda" {
   statement {
     effect = "Allow"
     principals {
-      type        = "Service"
-      identifiers = ["lambda.amazonaws.com"]
+      type = "Service"
+      identifiers = [
+        "lambda.amazonaws.com"
+      ]
     }
     actions = ["sts:AssumeRole"]
   }
@@ -35,10 +37,10 @@ data "aws_iam_policy_document" "contacts_policy" {
   statement {
     effect = "Allow"
     actions = [
-      "secretsmanager:GetSecretValue"
+      "rds-db:connect"
     ]
     resources = [
-      var.db_secret_arn
+      "arn:aws:rds-db:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:dbuser:${var.db_resource_id}/contacts_api"
     ]
   }
 }
@@ -56,43 +58,6 @@ resource "aws_iam_role_policy" "contacts_policy" {
 
 data "local_file" "contacts_zip" {
   filename = "${path.module}/../../../api/contacts/dist/package.zip"
-}
-
-resource "aws_db_proxy" "contacts_proxy" {
-  name                   = "${var.env_code}-rds-proxy-contacts"
-  debug_logging          = false
-  engine_family          = "POSTGRESQL"
-  idle_client_timeout    = 1800
-  require_tls            = true
-  role_arn               = aws_iam_role.contacts_role.arn
-  vpc_security_group_ids = [var.db_security_group_id]
-  vpc_subnet_ids         = var.lambda_subnet_ids
-
-  auth {
-    auth_scheme               = "SECRETS"
-    client_password_auth_type = "POSTGRES_SCRAM_SHA_256"
-    iam_auth                  = "DISABLED"
-    secret_arn                = var.db_secret_arn
-  }
-
-  tags = {
-    Name = "${var.env_code}-rds-proxy-contacts"
-  }
-}
-
-resource "aws_db_proxy_default_target_group" "apidb" {
-  db_proxy_name = aws_db_proxy.contacts_proxy.name
-  connection_pool_config {
-    connection_borrow_timeout    = 120
-    max_connections_percent      = 100
-    max_idle_connections_percent = 50
-  }
-}
-
-resource "aws_db_proxy_target" "apidb" {
-  db_proxy_name         = aws_db_proxy.contacts_proxy.name
-  db_cluster_identifier = var.db_cluster_identifier
-  target_group_name     = aws_db_proxy_default_target_group.apidb.name
 }
 
 resource "aws_security_group" "contacts" {
@@ -130,7 +95,7 @@ resource "aws_lambda_function" "contacts" {
   handler          = "contacts.handler"
   environment {
     variables = {
-      DB_SECRET_ARN = var.db_secret_arn
+      DB_HOST = var.db_host
     }
   }
   vpc_config {

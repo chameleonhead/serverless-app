@@ -41,13 +41,13 @@ module "frontend" {
 module "api" {
   source = "./modules/api"
 
-  env_code              = var.env_code
-  issuer                = module.idp.issuer
-  audience              = module.frontend.serverless_app_audience
-  user_pool_id          = module.idp.user_pool_id
-  vpc_id                = module.network.vpc_id
-  lambda_subnet_ids     = module.network.subnet_private_lambda_ids
-  db_security_group_id  = module.databases.apidb_security_group_id
-  db_secret_arn         = module.databases.apidb_credential_secret_arn
-  db_cluster_identifier = module.databases.apidb_cluster_identifier
+  env_code             = var.env_code
+  issuer               = module.idp.issuer
+  audience             = module.frontend.serverless_app_audience
+  user_pool_id         = module.idp.user_pool_id
+  vpc_id               = module.network.vpc_id
+  lambda_subnet_ids    = module.network.subnet_private_lambda_ids
+  db_security_group_id = module.databases.apidb_security_group_id
+  db_resource_id       = module.databases.apidb_resource_id
+  db_host              = module.databases.apidb_host
 }
