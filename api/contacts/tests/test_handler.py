@@ -1,12 +1,12 @@
 import json
 import unittest
 
-import hello
+import contacts
 
 
 class TestHandler(unittest.TestCase):
     def test_handler(self):
-        result = hello.handler({}, None)
+        result = contacts.handler({}, None)
         self.assertEqual(
             json.dumps({"message": "hello, world."}),
             result["body"],

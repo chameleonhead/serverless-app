@@ -31,45 +31,45 @@ data "aws_iam_policy_document" "assume_role_lambda" {
   }
 }
 
-resource "aws_iam_role" "hello_role" {
-  name                = "${var.env_code}-iam-role-service-hello"
+resource "aws_iam_role" "contacts_role" {
+  name                = "${var.env_code}-iam-role-service-contacts"
   assume_role_policy  = data.aws_iam_policy_document.assume_role_lambda.json
   managed_policy_arns = ["arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"]
 }
 
-data "local_file" "hello_zip" {
-  filename = "${path.module}/../../../api/hello/dist/package.zip"
+data "local_file" "contacts_zip" {
+  filename = "${path.module}/../../../api/contacts/dist/package.zip"
 }
 
-resource "aws_lambda_function" "hello" {
-  function_name    = "${var.env_code}-lambda-hello"
-  role             = aws_iam_role.hello_role.arn
-  filename         = data.local_file.hello_zip.filename
-  source_code_hash = data.local_file.hello_zip.content_md5
+resource "aws_lambda_function" "contacts" {
+  function_name    = "${var.env_code}-lambda-contacts"
+  role             = aws_iam_role.contacts_role.arn
+  filename         = data.local_file.contacts_zip.filename
+  source_code_hash = data.local_file.contacts_zip.content_md5
   runtime          = "python3.11"
-  handler          = "hello.handler"
+  handler          = "contacts.handler"
 }
 
-resource "aws_lambda_permission" "hello_api" {
-  function_name = aws_lambda_function.hello.function_name
+resource "aws_lambda_permission" "contacts_api" {
+  function_name = aws_lambda_function.contacts.function_name
   action        = "lambda:InvokeFunction"
   principal     = "apigateway.amazonaws.com"
   source_arn    = "arn:aws:execute-api:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:${aws_apigatewayv2_api.api.id}/*/*"
 }
 
-resource "aws_apigatewayv2_integration" "hello" {
+resource "aws_apigatewayv2_integration" "contacts" {
   api_id           = aws_apigatewayv2_api.api.id
   integration_type = "AWS_PROXY"
-  integration_uri  = "arn:aws:apigateway:${data.aws_region.current.name}:lambda:path/2015-03-31/functions/${aws_lambda_function.hello.arn}/invocations"
+  integration_uri  = "arn:aws:apigateway:${data.aws_region.current.name}:lambda:path/2015-03-31/functions/${aws_lambda_function.contacts.arn}/invocations"
 }
 
-resource "aws_apigatewayv2_route" "hello" {
+resource "aws_apigatewayv2_route" "contacts" {
   api_id             = aws_apigatewayv2_api.api.id
-  operation_name     = "GetHello"
-  route_key          = "GET /hello"
+  operation_name     = "Getcontacts"
+  route_key          = "GET /contacts"
   authorization_type = "JWT"
   authorizer_id      = aws_apigatewayv2_authorizer.cognito_authorizer.id
-  target             = "integrations/${aws_apigatewayv2_integration.hello.id}"
+  target             = "integrations/${aws_apigatewayv2_integration.contacts.id}"
 }
 
 resource "aws_apigatewayv2_stage" "default" {

@@ -16,7 +16,7 @@ phases:
     commands:
       - cd ${CODEBUILD_SRC_DIR}/frontend && npm install --no-progress
       - cd ${CODEBUILD_SRC_DIR}/bff/auth && poetry install
-      - cd ${CODEBUILD_SRC_DIR}/api/hello && poetry install
+      - cd ${CODEBUILD_SRC_DIR}/api/contacts && poetry install
   build:
     on-failure: ABORT
     commands:

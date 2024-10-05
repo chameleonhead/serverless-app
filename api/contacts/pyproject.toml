@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "hello"
+name = "contacts"
 version = "0.1.0"
 description = ""
 authors = ["Yuto Nagano <chamelion@hotmail.co.jp>"]
