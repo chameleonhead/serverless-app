@@ -31,7 +31,7 @@ phases:
     on-failure: ABORT
     commands:
       - cd ${CODEBUILD_SRC_DIR} && bash scripts/deploy.sh
-      - cd ${CODEBUILD_SRC_DIR} && bash scripts/test.sh
+      - cd ${CODEBUILD_SRC_DIR} && bash scripts/integration-test.sh
   post_build:
     on-failure: ABORT
     commands:

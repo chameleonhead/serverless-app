@@ -22,6 +22,7 @@ phases:
     commands:
       - cd ${CODEBUILD_SRC_DIR} && bash scripts/check.sh
       - cd ${CODEBUILD_SRC_DIR} && bash scripts/build.sh
+      - cd ${CODEBUILD_SRC_DIR} && bash scripts/test.sh
   post_build:
     on-failure: ABORT
     commands:
