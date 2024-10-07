@@ -56,6 +56,13 @@ resource "aws_s3_object" "api_source" {
   etag   = data.archive_file.api_source.output_md5
 }
 
+resource "null_resource" "execution" {
+  triggers = { md5 = aws_s3_object.api_source.etag }
+  provisioner "local-exec" {
+    command = "aws codebuild start-build --project-name ${aws_codebuild_project.apidbmigration.name}"
+  }
+}
+
 resource "aws_security_group" "cicd" {
   name   = "${var.env_code}-sg-cicd"
   vpc_id = var.vpc_id
