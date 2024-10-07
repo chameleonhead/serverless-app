@@ -9,9 +9,10 @@ module "network" {
 module "databases" {
   source = "./modules/databases"
 
-  env_code      = var.env_code
-  vpc_id        = module.network.vpc_id
-  db_subnet_ids = module.network.subnet_private_db_ids
+  env_code        = var.env_code
+  vpc_id          = module.network.vpc_id
+  db_subnet_ids   = module.network.subnet_private_db_ids
+  cicd_subnet_ids = module.network.subnet_private_cicd_ids
 }
 
 module "idp" {

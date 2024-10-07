@@ -1,6 +1,8 @@
+import os
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config, pool
+import boto3
+from sqlalchemy import create_engine, engine
 
 from alembic import context
 
@@ -19,10 +21,34 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 target_metadata = None
 
+
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
+def get_url():
+    """Generate a URL from the environment variables."""
+    db_port = os.getenv("DB_PORT", "5432")
+    db_host = os.getenv("DB_HOST", "localhost")
+    db_name = os.getenv("DB_NAME", "postgres")
+    db_user = os.getenv("DB_USER", "postgres")
+    db_password = os.getenv("DB_PASSWORD", "example")
+    if db_password == "rds":
+        rds = boto3.client("rds")
+        db_password = rds.generate_db_auth_token(
+            DBHostname=db_host,
+            Port=db_port,
+            DBUsername=db_user,
+        )
+    return engine.URL(
+        drivername="postgresql",
+        username=db_user,
+        password=db_password,
+        host=db_host,
+        port=db_port,
+        query={},
+        database=db_name,
+    )
 
 
 def run_migrations_offline() -> None:
@@ -37,7 +63,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = get_url()
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -56,16 +82,14 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
-
+    url = get_url()
+    connectable = create_engine(url)
     with connectable.connect() as connection:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
+            ompare_type=True,
+            compare_server_default=True,
         )
 
         with context.begin_transaction():

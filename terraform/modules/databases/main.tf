@@ -6,13 +6,35 @@ resource "aws_security_group" "apidb" {
   }
 }
 
-resource "aws_security_group_rule" "apidb" {
+resource "aws_security_group_rule" "apidb_from_apidb" {
   security_group_id        = aws_security_group.apidb.id
   type                     = "egress"
   source_security_group_id = aws_security_group.apidb.id
   protocol                 = "all"
   from_port                = 0
   to_port                  = 65535
+}
+
+resource "aws_security_group_rule" "apidb_to_apidb" {
+  security_group_id        = aws_security_group.apidb.id
+  type                     = "ingress"
+  source_security_group_id = aws_security_group.apidb.id
+  protocol                 = "all"
+  from_port                = 0
+  to_port                  = 65535
+}
+
+data "aws_prefix_list" "s3" {
+  prefix_list_id = "pl-61a54008"
+}
+
+resource "aws_security_group_rule" "s3" {
+  security_group_id = aws_security_group.apidb.id
+  type              = "egress"
+  cidr_blocks       = data.aws_prefix_list.s3.cidr_blocks
+  protocol          = "tcp"
+  from_port         = 443
+  to_port           = 443
 }
 
 resource "aws_db_subnet_group" "apidb" {
@@ -47,6 +69,7 @@ resource "aws_rds_cluster" "apidb" {
   engine_version                      = "16.1"
   db_cluster_parameter_group_name     = aws_rds_cluster_parameter_group.apidb.name
   storage_encrypted                   = true
+  database_name                       = "postgres"
   master_username                     = "postgres"
   manage_master_user_password         = true
   db_subnet_group_name                = aws_db_subnet_group.apidb.name

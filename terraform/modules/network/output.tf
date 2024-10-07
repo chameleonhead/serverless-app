@@ -10,11 +10,16 @@ output "subnet_private_db_ids" {
   ]
 }
 
-
 output "subnet_private_lambda_ids" {
   value = [
     aws_subnet.private_lambda_az1.id,
     aws_subnet.private_lambda_az2.id,
     aws_subnet.private_lambda_az3.id
+  ]
+}
+
+output "subnet_private_cicd_ids" {
+  value = [
+    aws_subnet.private_cicd_az1.id
   ]
 }
