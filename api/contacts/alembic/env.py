@@ -1,7 +1,6 @@
 import os
 from logging.config import fileConfig
 
-import boto3
 from sqlalchemy import create_engine, engine
 
 from alembic import context
@@ -33,13 +32,6 @@ def get_url():
     db_name = os.getenv("DB_NAME", "postgres")
     db_user = os.getenv("DB_USER", "postgres")
     db_password = os.getenv("DB_PASSWORD", "example")
-    if db_password == "rds":
-        rds = boto3.client("rds")
-        db_password = rds.generate_db_auth_token(
-            DBHostname=db_host,
-            Port=db_port,
-            DBUsername=db_user,
-        )
     return engine.URL(
         drivername="postgresql",
         username=db_user,
